@@ -55,6 +55,25 @@ async function crearCliente() {
   }
 }
 
+async function listarClientes() {
+  const clientes = await service.listarTodos();
+
+  if (clientes.length === 0) {
+    console.log(chalk.yellow("No hay clientes registrados todavía."));
+    return;
+  }
+
+  const filas = clientes.map((c) => ({
+    ID: c.id,
+    Nombre: c.nombre,
+    Apellido: c.apellido,
+    Email: c.email ?? "(sin correo)",
+    Teléfono: c.telefono ?? "(sin dato)",
+  }));
+
+  console.table(filas);
+}
+
 export async function menuClientes() {
   let volver = false;
 
@@ -66,6 +85,7 @@ export async function menuClientes() {
         message: chalk.cyan("Menú de Clientes"),
         choices: [
           { name: "Crear cliente", value: "crear" },
+          { name: "Listar clientes", value: "listar" },
           new inquirer.Separator(),
           { name: "Volver", value: "volver" },
         ],
@@ -73,8 +93,7 @@ export async function menuClientes() {
     ]);
 
     if (opcion === "crear") await crearCliente();
+    if (opcion === "listar") await listarClientes();
     if (opcion === "volver") volver = true;
-
-
   }
 }
