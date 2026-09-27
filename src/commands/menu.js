@@ -1,3 +1,4 @@
+import { menuClientes } from "./cliente-commands.js";
 import inquirer from "inquirer";
 import chalk from "chalk";
 
@@ -25,7 +26,7 @@ export async function mostrarMenu() {
 
     switch (opcion) {
       case "clientes":
-        console.log(chalk.yellow("(Aquí irá el submenú de clientes, próximamente)"));
+        await menuClientes();
         break;
       case "planes":
         console.log(chalk.yellow("(Aquí irá el submenú de planes, próximamente)"));
