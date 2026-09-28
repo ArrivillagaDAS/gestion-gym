@@ -33,14 +33,25 @@ export class FinanzasRepository {
         mf.categoria,
         mf.descripcion,
         mf.monto,
-        DATE_FORMAT(mf.fecha, '%Y-%m-%d') AS fecha,
-        CONCAT(c.nombre, ' ', c.apellido) AS cliente_nombre
+        DATE_FORMAT(
+          mf.fecha,
+          '%Y-%m-%d'
+        ) AS fecha,
+        CONCAT(
+          c.nombre,
+          ' ',
+          c.apellido
+        ) AS cliente_nombre
       FROM movimientos_financieros mf
-      LEFT JOIN clientes c ON c.id = mf.cliente_id
+      LEFT JOIN clientes c
+        ON c.id = mf.cliente_id
       WHERE mf.fecha BETWEEN ? AND ?
     `;
 
-    const parametros = [desde, hasta];
+    const parametros = [
+      desde,
+      hasta,
+    ];
 
     if (clienteId !== null) {
       sql += ` AND mf.cliente_id = ?`;
@@ -51,39 +62,53 @@ export class FinanzasRepository {
       ORDER BY mf.fecha ASC, mf.id ASC
     `;
 
-    const [filas] = await conexion.query(sql, parametros);
+    const [filas] =
+      await conexion.query(
+        sql,
+        parametros
+      );
 
     return filas;
   }
 
-  async balancePorRango(desde, hasta, conexion = pool) {
-    const [filas] = await conexion.query(
-      `
-      SELECT
-        COALESCE(
-          SUM(
-            CASE
-              WHEN tipo = 'ingreso' THEN monto
-              ELSE 0
-            END
-          ),
-          0
-        ) AS ingresos,
+  async balancePorRango(
+    desde,
+    hasta,
+    conexion = pool
+  ) {
+    const [filas] =
+      await conexion.query(
+        `
+        SELECT
+          COALESCE(
+            SUM(
+              CASE
+                WHEN tipo = 'ingreso'
+                THEN monto
+                ELSE 0
+              END
+            ),
+            0
+          ) AS ingresos,
 
-        COALESCE(
-          SUM(
-            CASE
-              WHEN tipo = 'egreso' THEN monto
-              ELSE 0
-            END
-          ),
-          0
-        ) AS egresos
-      FROM movimientos_financieros
-      WHERE fecha BETWEEN ? AND ?
-      `,
-      [desde, hasta]
-    );
+          COALESCE(
+            SUM(
+              CASE
+                WHEN tipo = 'egreso'
+                THEN monto
+                ELSE 0
+              END
+            ),
+            0
+          ) AS egresos
+
+        FROM movimientos_financieros
+
+        WHERE fecha BETWEEN ?
+          AND ?
+        `,
+        [desde, hasta]
+      );
 
     return filas[0];
   }
@@ -94,34 +119,44 @@ export class FinanzasRepository {
     hasta,
     conexion = pool
   ) {
-    const [filas] = await conexion.query(
-      `
-      SELECT
-        COALESCE(
-          SUM(
-            CASE
-              WHEN tipo = 'ingreso' THEN monto
-              ELSE 0
-            END
-          ),
-          0
-        ) AS ingresos,
+    const [filas] =
+      await conexion.query(
+        `
+        SELECT
+          COALESCE(
+            SUM(
+              CASE
+                WHEN tipo = 'ingreso'
+                THEN monto
+                ELSE 0
+              END
+            ),
+            0
+          ) AS ingresos,
 
-        COALESCE(
-          SUM(
-            CASE
-              WHEN tipo = 'egreso' THEN monto
-              ELSE 0
-            END
-          ),
-          0
-        ) AS egresos
-      FROM movimientos_financieros
-      WHERE cliente_id = ?
-        AND fecha BETWEEN ? AND ?
-      `,
-      [clienteId, desde, hasta]
-    );
+          COALESCE(
+            SUM(
+              CASE
+                WHEN tipo = 'egreso'
+                THEN monto
+                ELSE 0
+              END
+            ),
+            0
+          ) AS egresos
+
+        FROM movimientos_financieros
+
+        WHERE cliente_id = ?
+          AND fecha BETWEEN ?
+          AND ?
+        `,
+        [
+          clienteId,
+          desde,
+          hasta,
+        ]
+      );
 
     return filas[0];
   }
