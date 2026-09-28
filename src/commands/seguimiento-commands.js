@@ -29,6 +29,29 @@ function numeroOpcional(texto) {
   return limpio === "" ? undefined : Number(limpio);
 }
 
+function formatearVariacion(valor) {
+  return `${valor > 0 ? "+" : ""}${valor.toFixed(2)}`;
+}
+
+// arma el texto de un registro de avance, en una o varias lineas
+function describirRegistro(r) {
+  const lineas = [`${r.fecha} | contrato #${r.contrato_id} ${r.plan_nombre} (${r.contrato_estado})`];
+
+  const medicion = [];
+  if (r.peso !== null) {
+    const variacion = r.variacion_peso !== null ? ` (${formatearVariacion(r.variacion_peso)})` : "";
+    medicion.push(`Peso: ${r.peso.toFixed(2)} kg${variacion}`);
+  }
+  if (r.grasa_corporal !== null) medicion.push(`Grasa: ${r.grasa_corporal.toFixed(1)} %`);
+  if (medicion.length > 0) lineas.push("   " + medicion.join(" | "));
+
+  if (r.medidas) lineas.push(`   Medidas: ${r.medidas}`);
+  if (r.foto) lineas.push(`   Foto: ${r.foto}`);
+  if (r.comentarios) lineas.push(`   Comentarios: ${r.comentarios}`);
+
+  return lineas.join("\n");
+}
+
 async function elegirCliente() {
   const listaClientes = await clientes.listarTodos();
 
@@ -105,6 +128,39 @@ async function registrarAvance() {
   }
 }
 
+async function verProgreso() {
+  const clienteId = await elegirCliente();
+  if (clienteId === null) return;
+
+  try {
+    const registros = await seguimientos.progresoPorCliente(clienteId);
+
+    if (registros.length === 0) {
+      console.log(chalk.yellow("Este cliente no tiene avances registrados."));
+      return;
+    }
+
+    console.log(chalk.cyan(`\nProgreso cronológico (${registros.length} registro(s)):`));
+    registros.forEach((r) => console.log(describirRegistro(r)));
+
+    const conPeso = registros.filter((r) => r.peso !== null);
+    if (conPeso.length >= 2) {
+      const inicial = conPeso[0].peso;
+      const actual = conPeso[conPeso.length - 1].peso;
+      console.log(
+        chalk.cyan(
+          `\nResumen de peso: inicial ${inicial.toFixed(2)} kg, actual ${actual.toFixed(2)} kg, ` +
+            `cambio ${formatearVariacion(actual - inicial)} kg`
+        )
+      );
+    }
+    console.log("");
+  } catch (error) {
+    console.log(chalk.red("Ocurrió un error inesperado al consultar el progreso."));
+    console.log(chalk.gray(error.message));
+  }
+}
+
 export async function menuSeguimiento() {
   let volver = false;
 
@@ -116,6 +172,7 @@ export async function menuSeguimiento() {
         message: chalk.cyan("Menú de Seguimiento físico"),
         choices: [
           { name: "Registrar avance semanal", value: "registrar" },
+          { name: "Ver progreso de un cliente", value: "ver" },
           new inquirer.Separator(),
           { name: "Volver", value: "volver" },
         ],
@@ -123,6 +180,7 @@ export async function menuSeguimiento() {
     ]);
 
     if (opcion === "registrar") await registrarAvance();
+    if (opcion === "ver") await verProgreso();
     if (opcion === "volver") volver = true;
   }
 }
