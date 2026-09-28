@@ -254,6 +254,72 @@ async function cancelarContrato() {
   }
 }
 
+async function finalizarContrato() {
+  const listaClientes = await clientes.listarTodos();
+
+  if (listaClientes.length === 0) {
+    console.log(chalk.yellow("No hay clientes registrados."));
+    return;
+  }
+
+  const { clienteId } = await inquirer.prompt([
+    {
+      type: "select",
+      name: "clienteId",
+      message: "Cliente:",
+      choices: listaClientes.map((c) => ({
+        name: `${c.id} - ${c.nombre} ${c.apellido}`,
+        value: c.id,
+      })),
+    },
+  ]);
+
+  try {
+    const lista = await contratos.listarPorCliente(clienteId);
+    const activos = lista.filter((c) => c.estado === "activo");
+
+    if (activos.length === 0) {
+      console.log(chalk.yellow("Este cliente no tiene contratos activos para finalizar."));
+      return;
+    }
+
+    const { contratoId, confirmar } = await inquirer.prompt([
+      {
+        type: "select",
+        name: "contratoId",
+        message: "Contrato a finalizar:",
+        choices: activos.map((c) => ({
+          name: `#${c.id} | ${c.plan_nombre} | vence ${formatearFecha(c.fecha_fin)}`,
+          value: c.id,
+        })),
+      },
+      {
+        type: "confirm",
+        name: "confirmar",
+        message: "¿Seguro que quieres finalizar este contrato?",
+        default: false,
+      },
+    ]);
+
+    if (!confirmar) {
+      console.log(chalk.yellow("Operación cancelada."));
+      return;
+    }
+
+    const resultado = await contratos.finalizar(contratoId);
+
+    if (resultado.exito) {
+      console.log(chalk.green(`Contrato #${contratoId} finalizado. Su seguimiento se conserva.`));
+    } else {
+      console.log(chalk.red("No se pudo finalizar el contrato:"));
+      resultado.errores.forEach((e) => console.log(chalk.red(" - " + e)));
+    }
+  } catch (error) {
+    console.log(chalk.red("Ocurrió un error inesperado al finalizar el contrato."));
+    console.log(chalk.gray(error.message));
+  }
+}
+
 export async function menuContratos() {
   let volver = false;
 
@@ -268,6 +334,7 @@ export async function menuContratos() {
           { name: "Consultar contratos de un cliente", value: "consultar" },
           { name: "Renovar contrato", value: "renovar" },
           { name: "Cancelar contrato", value: "cancelar" },
+          { name: "Finalizar contrato", value: "finalizar" },
           new inquirer.Separator(),
           { name: "Volver", value: "volver" },
         ],
@@ -278,6 +345,7 @@ export async function menuContratos() {
     if (opcion === "consultar") await consultarContratos();
     if (opcion === "renovar") await renovarContrato();
     if (opcion === "cancelar") await cancelarContrato();
+    if (opcion === "finalizar") await finalizarContrato();
     if (opcion === "volver") volver = true;
   }
 }

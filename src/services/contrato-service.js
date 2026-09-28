@@ -161,4 +161,15 @@ export class ContratoService {
       conexion.release();
     }
   }
+
+  async finalizar(contratoId) {
+    // un solo UPDATE condicionado al estado activo: es atomico, no necesita transaccion
+    // el seguimiento no se toca, porque el plan termino normalmente
+    const cambio = await this.contratos.cambiarEstado(contratoId, "finalizado", "activo");
+    if (!cambio) {
+      return { exito: false, errores: ["El contrato no existe o ya no está activo."] };
+    }
+
+    return { exito: true };
+  }
 }
