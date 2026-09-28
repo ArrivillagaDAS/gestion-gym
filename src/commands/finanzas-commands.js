@@ -512,6 +512,108 @@ async function verBalanceRango() {
   }
 }
 
+async function verBalanceCliente() {
+  const clienteId =
+    await elegirCliente();
+
+  if (clienteId === null) return;
+
+  const datos =
+    await inquirer.prompt([
+      {
+        type: "input",
+        name: "desde",
+        message:
+          "Fecha inicial (AAAA-MM-DD):",
+        default:
+          dayjs()
+            .startOf("month")
+            .format(
+              "YYYY-MM-DD"
+            ),
+      },
+      {
+        type: "input",
+        name: "hasta",
+        message:
+          "Fecha final (AAAA-MM-DD):",
+        default:
+          dayjs().format(
+            "YYYY-MM-DD"
+          ),
+      },
+    ]);
+
+  try {
+    const resultado =
+      await finanzas.balancePorCliente(
+        clienteId,
+        datos.desde.trim(),
+        datos.hasta.trim()
+      );
+
+    if (!resultado.exito) {
+      console.log(
+        chalk.red(
+          "No se pudo consultar el balance del cliente:"
+        )
+      );
+
+      resultado.errores.forEach(
+        (error) => {
+          console.log(
+            chalk.red(
+              ` - ${error}`
+            )
+          );
+        }
+      );
+
+      return;
+    }
+
+    console.log(
+      chalk.cyan(
+        "\nBalance financiero por cliente"
+      )
+    );
+
+    console.log(
+      `Periodo: ${resultado.desde} a ${resultado.hasta}`
+    );
+
+    console.log(
+      `Ingresos: ${formatearMonto(
+        resultado.ingresos
+      )}`
+    );
+
+    console.log(
+      `Egresos asociados: ${formatearMonto(
+        resultado.egresos
+      )}`
+    );
+
+    console.log(
+      `Balance: ${formatearMonto(
+        resultado.balance
+      )}`
+    );
+  } catch (error) {
+    console.log(
+      chalk.red(
+        "Ocurrió un error inesperado al consultar el balance del cliente."
+      )
+    );
+
+    console.log(
+      chalk.gray(
+        error.message
+      )
+    );
+  }
+}
+
 export async function menuFinanzas() {
   let volver = false;
 
@@ -550,6 +652,12 @@ export async function menuFinanzas() {
               value:
                 "balance_rango",
             },
+            {
+              name:
+                "Consultar balance por cliente",
+              value:
+                "balance_cliente",
+            },
             new inquirer.Separator(),
             {
               name: "Volver",
@@ -569,7 +677,8 @@ export async function menuFinanzas() {
     }
 
     if (
-      opcion === "mensualidad"
+      opcion ===
+      "mensualidad"
     ) {
       await registrarPagoMensualidad();
     }
@@ -579,6 +688,13 @@ export async function menuFinanzas() {
       "balance_rango"
     ) {
       await verBalanceRango();
+    }
+
+    if (
+      opcion ===
+      "balance_cliente"
+    ) {
+      await verBalanceCliente();
     }
 
     if (
