@@ -179,6 +179,81 @@ async function renovarContrato() {
   }
 }
 
+async function cancelarContrato() {
+  const listaClientes = await clientes.listarTodos();
+
+  if (listaClientes.length === 0) {
+    console.log(chalk.yellow("No hay clientes registrados."));
+    return;
+  }
+
+  const { clienteId } = await inquirer.prompt([
+    {
+      type: "select",
+      name: "clienteId",
+      message: "Cliente:",
+      choices: listaClientes.map((c) => ({
+        name: `${c.id} - ${c.nombre} ${c.apellido}`,
+        value: c.id,
+      })),
+    },
+  ]);
+
+  try {
+    const lista = await contratos.listarPorCliente(clienteId);
+    const activos = lista.filter((c) => c.estado === "activo");
+
+    if (activos.length === 0) {
+      console.log(chalk.yellow("Este cliente no tiene contratos activos para cancelar."));
+      return;
+    }
+
+    const { contratoId } = await inquirer.prompt([
+      {
+        type: "select",
+        name: "contratoId",
+        message: "Contrato a cancelar:",
+        choices: activos.map((c) => ({
+          name: `#${c.id} | ${c.plan_nombre} | vence ${formatearFecha(c.fecha_fin)}`,
+          value: c.id,
+        })),
+      },
+    ]);
+
+    const total = await contratos.contarSeguimientos(contratoId);
+    console.log(
+      chalk.yellow(`Se cancelará el contrato y se borrarán ${total} registro(s) de seguimiento.`)
+    );
+
+    const { confirmar } = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "confirmar",
+        message: "¿Seguro que quieres cancelar este contrato?",
+        default: false,
+      },
+    ]);
+
+    if (!confirmar) {
+      console.log(chalk.yellow("Operación cancelada."));
+      return;
+    }
+
+    const resultado = await contratos.cancelar(contratoId);
+
+    if (resultado.exito) {
+      console.log(chalk.green(`Contrato #${contratoId} cancelado.`));
+      console.log(`Seguimientos eliminados: ${resultado.seguimientosEliminados}`);
+    } else {
+      console.log(chalk.red("No se pudo cancelar el contrato:"));
+      resultado.errores.forEach((e) => console.log(chalk.red(" - " + e)));
+    }
+  } catch (error) {
+    console.log(chalk.red("Ocurrió un error inesperado al cancelar el contrato."));
+    console.log(chalk.gray(error.message));
+  }
+}
+
 export async function menuContratos() {
   let volver = false;
 
@@ -192,6 +267,7 @@ export async function menuContratos() {
           { name: "Asignar plan a cliente", value: "asignar" },
           { name: "Consultar contratos de un cliente", value: "consultar" },
           { name: "Renovar contrato", value: "renovar" },
+          { name: "Cancelar contrato", value: "cancelar" },
           new inquirer.Separator(),
           { name: "Volver", value: "volver" },
         ],
@@ -201,6 +277,7 @@ export async function menuContratos() {
     if (opcion === "asignar") await asignarPlan();
     if (opcion === "consultar") await consultarContratos();
     if (opcion === "renovar") await renovarContrato();
+    if (opcion === "cancelar") await cancelarContrato();
     if (opcion === "volver") volver = true;
   }
 }
