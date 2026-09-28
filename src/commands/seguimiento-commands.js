@@ -161,6 +161,61 @@ async function verProgreso() {
   }
 }
 
+async function eliminarAvance() {
+  const clienteId = await elegirCliente();
+  if (clienteId === null) return;
+
+  try {
+    const registros = await seguimientos.progresoPorCliente(clienteId);
+    // solo se ofrecen los registros de contratos activos, el resto es historial
+    const eliminables = registros.filter((r) => r.contrato_estado === "activo");
+
+    if (eliminables.length === 0) {
+      console.log(chalk.yellow("Este cliente no tiene avances eliminables (solo se eliminan los de contratos activos)."));
+      return;
+    }
+
+    const { seguimientoId } = await inquirer.prompt([
+      {
+        type: "select",
+        name: "seguimientoId",
+        message: "Avance a eliminar:",
+        choices: eliminables.map((r) => ({
+          name: `#${r.id} | ${r.fecha} | contrato #${r.contrato_id} ${r.plan_nombre}` +
+            (r.peso !== null ? ` | ${r.peso.toFixed(2)} kg` : ""),
+          value: r.id,
+        })),
+      },
+    ]);
+
+    const { confirmar } = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "confirmar",
+        message: "¿Seguro que quieres eliminar este avance? No se puede deshacer.",
+        default: false,
+      },
+    ]);
+
+    if (!confirmar) {
+      console.log(chalk.yellow("Operación cancelada."));
+      return;
+    }
+
+    const resultado = await seguimientos.eliminar(seguimientoId);
+
+    if (resultado.exito) {
+      console.log(chalk.green(`Avance #${seguimientoId} eliminado.`));
+    } else {
+      console.log(chalk.red("No se pudo eliminar el avance:"));
+      resultado.errores.forEach((e) => console.log(chalk.red(" - " + e)));
+    }
+  } catch (error) {
+    console.log(chalk.red("Ocurrió un error inesperado al eliminar el avance."));
+    console.log(chalk.gray(error.message));
+  }
+}
+
 export async function menuSeguimiento() {
   let volver = false;
 
@@ -173,6 +228,7 @@ export async function menuSeguimiento() {
         choices: [
           { name: "Registrar avance semanal", value: "registrar" },
           { name: "Ver progreso de un cliente", value: "ver" },
+          { name: "Eliminar registro de avance", value: "eliminar" },
           new inquirer.Separator(),
           { name: "Volver", value: "volver" },
         ],
@@ -181,6 +237,7 @@ export async function menuSeguimiento() {
 
     if (opcion === "registrar") await registrarAvance();
     if (opcion === "ver") await verProgreso();
+    if (opcion === "eliminar") await eliminarAvance();
     if (opcion === "volver") volver = true;
   }
 }
