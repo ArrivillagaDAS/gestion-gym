@@ -94,4 +94,47 @@ export class SeguimientoService {
       return { ...fila, peso, grasa_corporal: grasa, variacion_peso: variacion };
     });
   }
+
+  async eliminar(seguimientoId) {
+    const conexion = await pool.getConnection();
+
+    try {
+      // accion critica: verificar el estado del contrato y borrar el avance ocurren juntos o no ocurren
+      await conexion.beginTransaction();
+
+      const registro = await this.seguimientos.buscarPorId(seguimientoId, conexion);
+      if (!registro) {
+        await conexion.rollback();
+        return { exito: false, errores: ["El registro de avance no existe."] };
+      }
+
+      // el bloqueo evita que el contrato se cancele o finalice mientras se borra el avance
+      const contrato = await this.contratos.bloquearPorId(registro.contrato_id, conexion);
+
+      // regla de consistencia: el seguimiento de un contrato cerrado es historial y no se toca
+      if (!contrato || contrato.estado !== "activo") {
+        await conexion.rollback();
+        return {
+          exito: false,
+          errores: ["El registro pertenece a un contrato que no está activo: es historial y no se puede eliminar."],
+        };
+      }
+
+      const eliminado = await this.seguimientos.eliminar(seguimientoId, conexion);
+      if (!eliminado) {
+        await conexion.rollback();
+        return { exito: false, errores: ["El registro ya no existe."] };
+      }
+
+      await conexion.commit();
+      return { exito: true };
+    } catch (error) {
+      // cualquier falla deshace todo: el avance sigue en su lugar
+      await conexion.rollback();
+      throw error;
+    } finally {
+      // la conexion siempre se devuelve al pool
+      conexion.release();
+    }
+  }
 }

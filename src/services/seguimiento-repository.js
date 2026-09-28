@@ -42,4 +42,21 @@ export class SeguimientoRepository {
     );
     return filas;
   }
+
+  async buscarPorId(id, conexion = pool) {
+    const [filas] = await conexion.query(
+      "SELECT id, contrato_id FROM seguimientos WHERE id = ?",
+      [id]
+    );
+    return filas[0] || null;
+  }
+
+  // devuelve true si realmente se borro una fila
+  async eliminar(id, conexion = pool) {
+    const [resultado] = await conexion.query(
+      "DELETE FROM seguimientos WHERE id = ?",
+      [id]
+    );
+    return resultado.affectedRows > 0;
+  }
 }
