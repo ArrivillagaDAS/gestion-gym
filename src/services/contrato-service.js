@@ -61,6 +61,10 @@ export class ContratoService {
     return this.contratos.listarPorCliente(clienteId);
   }
 
+  async contarSeguimientos(contratoId) {
+    return this.contratos.contarSeguimientos(contratoId);
+  }
+
   async renovar(contratoId) {
     const conexion = await pool.getConnection();
 
@@ -110,6 +114,46 @@ export class ContratoService {
       return { exito: true, id, contrato: nuevo };
     } catch (error) {
       // cualquier falla deshace todo lo hecho dentro de la transaccion
+      await conexion.rollback();
+      throw error;
+    } finally {
+      // la conexion siempre se devuelve al pool
+      conexion.release();
+    }
+  }
+
+  async cancelar(contratoId) {
+    const conexion = await pool.getConnection();
+
+    try {
+      // accion critica: borrar el seguimiento y cancelar el contrato ocurren juntos o no ocurren
+      await conexion.beginTransaction();
+
+      // el bloqueo evita que el contrato cambie de estado mientras se cancela
+      const actual = await this.contratos.bloquearPorId(contratoId, conexion);
+      if (!actual) {
+        await conexion.rollback();
+        return { exito: false, errores: ["El contrato no existe."] };
+      }
+
+      // regla de negocio: solo se cancela un contrato activo
+      if (actual.estado !== "activo") {
+        await conexion.rollback();
+        return { exito: false, errores: [`El contrato está ${actual.estado}, no se puede cancelar.`] };
+      }
+
+      const eliminados = await this.contratos.eliminarSeguimientos(actual.id, conexion);
+
+      const cancelado = await this.contratos.cambiarEstado(actual.id, "cancelado", "activo", conexion);
+      if (!cancelado) {
+        await conexion.rollback();
+        return { exito: false, errores: ["El contrato cambió de estado, intenta de nuevo."] };
+      }
+
+      await conexion.commit();
+      return { exito: true, seguimientosEliminados: eliminados };
+    } catch (error) {
+      // cualquier falla deshace todo: el contrato sigue activo y el seguimiento intacto
       await conexion.rollback();
       throw error;
     } finally {

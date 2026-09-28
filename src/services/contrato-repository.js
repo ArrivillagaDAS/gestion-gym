@@ -67,4 +67,21 @@ export class ContratoRepository {
     );
     return resultado.affectedRows > 0;
   }
+
+  async contarSeguimientos(contratoId, conexion = pool) {
+    const [filas] = await conexion.query(
+      "SELECT COUNT(*) AS total FROM seguimientos WHERE contrato_id = ?",
+      [contratoId]
+    );
+    return Number(filas[0].total);
+  }
+
+  // devuelve cuantos registros de seguimiento se borraron
+  async eliminarSeguimientos(contratoId, conexion = pool) {
+    const [resultado] = await conexion.query(
+      "DELETE FROM seguimientos WHERE contrato_id = ?",
+      [contratoId]
+    );
+    return resultado.affectedRows;
+  }
 }
