@@ -46,4 +46,25 @@ export class ContratoRepository {
     );
     return filas;
   }
+
+  // bloquea la fila del contrato hasta que termine la transaccion
+  // las fechas salen ya como texto YYYY-MM-DD para evitar problemas de zona horaria
+  async bloquearPorId(id, conexion) {
+    const [filas] = await conexion.query(
+      `SELECT id, cliente_id, plan_id, estado,
+              DATE_FORMAT(fecha_fin, '%Y-%m-%d') AS fecha_fin
+       FROM contratos WHERE id = ? FOR UPDATE`,
+      [id]
+    );
+    return filas[0] || null;
+  }
+
+  // cambia el estado solo si el contrato todavia esta en el estado esperado
+  async cambiarEstado(id, estadoNuevo, estadoEsperado, conexion = pool) {
+    const [resultado] = await conexion.query(
+      "UPDATE contratos SET estado = ? WHERE id = ? AND estado = ?",
+      [estadoNuevo, id, estadoEsperado]
+    );
+    return resultado.affectedRows > 0;
+  }
 }

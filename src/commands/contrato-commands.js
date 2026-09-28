@@ -110,6 +110,75 @@ async function consultarContratos() {
   }
 }
 
+async function renovarContrato() {
+  const listaClientes = await clientes.listarTodos();
+
+  if (listaClientes.length === 0) {
+    console.log(chalk.yellow("No hay clientes registrados."));
+    return;
+  }
+
+  const { clienteId } = await inquirer.prompt([
+    {
+      type: "select",
+      name: "clienteId",
+      message: "Cliente:",
+      choices: listaClientes.map((c) => ({
+        name: `${c.id} - ${c.nombre} ${c.apellido}`,
+        value: c.id,
+      })),
+    },
+  ]);
+
+  try {
+    const lista = await contratos.listarPorCliente(clienteId);
+    const activos = lista.filter((c) => c.estado === "activo");
+
+    if (activos.length === 0) {
+      console.log(chalk.yellow("Este cliente no tiene contratos activos para renovar."));
+      return;
+    }
+
+    const { contratoId, confirmar } = await inquirer.prompt([
+      {
+        type: "select",
+        name: "contratoId",
+        message: "Contrato a renovar:",
+        choices: activos.map((c) => ({
+          name: `#${c.id} | ${c.plan_nombre} | vence ${formatearFecha(c.fecha_fin)}`,
+          value: c.id,
+        })),
+      },
+      {
+        type: "confirm",
+        name: "confirmar",
+        message: "¿Seguro que quieres renovar este contrato?",
+        default: false,
+      },
+    ]);
+
+    if (!confirmar) {
+      console.log(chalk.yellow("Operación cancelada."));
+      return;
+    }
+
+    const resultado = await contratos.renovar(contratoId);
+
+    if (resultado.exito) {
+      const c = resultado.contrato;
+      console.log(chalk.green(`Contrato #${contratoId} finalizado y renovado (nuevo id: ${resultado.id}).`));
+      console.log(`Nueva vigencia: ${c.fecha_inicio} a ${c.fecha_fin}`);
+      console.log(`Precio: ${c.precio.toFixed(2)}`);
+    } else {
+      console.log(chalk.red("No se pudo renovar el contrato:"));
+      resultado.errores.forEach((e) => console.log(chalk.red(" - " + e)));
+    }
+  } catch (error) {
+    console.log(chalk.red("Ocurrió un error inesperado al renovar el contrato."));
+    console.log(chalk.gray(error.message));
+  }
+}
+
 export async function menuContratos() {
   let volver = false;
 
@@ -122,6 +191,7 @@ export async function menuContratos() {
         choices: [
           { name: "Asignar plan a cliente", value: "asignar" },
           { name: "Consultar contratos de un cliente", value: "consultar" },
+          { name: "Renovar contrato", value: "renovar" },
           new inquirer.Separator(),
           { name: "Volver", value: "volver" },
         ],
@@ -130,6 +200,7 @@ export async function menuContratos() {
 
     if (opcion === "asignar") await asignarPlan();
     if (opcion === "consultar") await consultarContratos();
+    if (opcion === "renovar") await renovarContrato();
     if (opcion === "volver") volver = true;
   }
 }
