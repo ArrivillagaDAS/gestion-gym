@@ -177,6 +177,56 @@ async function registrarAlimentos() {
   }
 }
 
+async function verReporteSemanal() {
+  const clienteId = await elegirCliente();
+  if (clienteId === null) return;
+
+  try {
+    // por defecto, el lunes de la semana actual
+    const lunes = dayjs().subtract((dayjs().day() + 6) % 7, "day").format("YYYY-MM-DD");
+
+    const { inicio } = await inquirer.prompt([
+      { type: "input", name: "inicio", message: "Fecha de inicio de la semana (AAAA-MM-DD):", default: lunes },
+    ]);
+
+    const reporte = await nutricion.reporteSemanal(clienteId, inicio.trim());
+
+    if (!reporte.exito) {
+      console.log(chalk.red("No se pudo generar el reporte:"));
+      reporte.errores.forEach((e) => console.log(chalk.red(" - " + e)));
+      return;
+    }
+
+    if (reporte.diasConRegistros === 0) {
+      console.log(chalk.yellow(`Este cliente no tiene alimentos registrados entre ${reporte.inicio} y ${reporte.fin}.`));
+      return;
+    }
+
+    const nombresDia = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+
+    console.log(chalk.cyan(`\nReporte nutricional semanal (${reporte.inicio} a ${reporte.fin}):`));
+    reporte.dias.forEach((d) => {
+      const etiqueta = `${d.fecha} (${nombresDia[dayjs(d.fecha).day()]})`;
+      if (d.alimentos.length === 0) {
+        console.log(`${etiqueta} | sin registros`);
+        return;
+      }
+      console.log(`${etiqueta} | ${d.calorias} kcal`);
+      d.alimentos.forEach((a) => console.log(`   ${a.comida}: ${a.alimento} - ${a.calorias} kcal`));
+    });
+
+    console.log(
+      chalk.cyan(
+        `\nTotal semanal: ${reporte.total} kcal\n` +
+          `Promedio diario: ${reporte.promedio.toFixed(1)} kcal (sobre ${reporte.diasConRegistros} día(s) con registros)\n`
+      )
+    );
+  } catch (error) {
+    console.log(chalk.red("Ocurrió un error inesperado al generar el reporte."));
+    console.log(chalk.gray(error.message));
+  }
+}
+
 export async function menuNutricion() {
   let volver = false;
 
@@ -189,6 +239,7 @@ export async function menuNutricion() {
         choices: [
           { name: "Crear plan de alimentación", value: "crear" },
           { name: "Registrar alimentos por día", value: "alimentos" },
+          { name: "Reporte nutricional semanal", value: "reporte" },
           new inquirer.Separator(),
           { name: "Volver", value: "volver" },
         ],
@@ -197,6 +248,7 @@ export async function menuNutricion() {
 
     if (opcion === "crear") await crearPlanAlimentacion();
     if (opcion === "alimentos") await registrarAlimentos();
+    if (opcion === "reporte") await verReporteSemanal();
     if (opcion === "volver") volver = true;
   }
 }
