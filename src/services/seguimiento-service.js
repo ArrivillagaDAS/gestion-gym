@@ -72,4 +72,26 @@ export class SeguimientoService {
       conexion.release();
     }
   }
+
+  // solo lee, no modifica nada: no necesita transaccion
+  async progresoPorCliente(clienteId) {
+    const filas = await this.seguimientos.listarPorCliente(clienteId);
+    let pesoAnterior = null;
+
+    return filas.map((fila) => {
+      const peso = fila.peso === null ? null : Number(fila.peso);
+      const grasa = fila.grasa_corporal === null ? null : Number(fila.grasa_corporal);
+
+      // variacion respecto al registro anterior que tenga peso
+      let variacion = null;
+      if (peso !== null && pesoAnterior !== null) {
+        variacion = peso - pesoAnterior;
+      }
+      if (peso !== null) {
+        pesoAnterior = peso;
+      }
+
+      return { ...fila, peso, grasa_corporal: grasa, variacion_peso: variacion };
+    });
+  }
 }
