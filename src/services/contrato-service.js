@@ -56,4 +56,8 @@ export class ContratoService {
       conexion.release();
     }
   }
+
+  async listarPorCliente(clienteId) {
+    return this.contratos.listarPorCliente(clienteId);
+  }
 }
