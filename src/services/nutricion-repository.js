@@ -58,4 +58,19 @@ export class NutricionRepository {
     );
     return resultado.insertId;
   }
+
+  // todos los alimentos de un cliente entre dos fechas (incluidas), en orden cronologico
+  // suma los planes de alimentacion de todos sus contratos, activos o no: es una consulta de lectura
+  async listarAlimentosPorRango(clienteId, desde, hasta, conexion = pool) {
+    const [filas] = await conexion.query(
+      `SELECT a.id, DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha, a.comida, a.alimento, a.calorias
+       FROM alimentos_dia a
+       JOIN planes_alimentacion pa ON pa.id = a.plan_alimentacion_id
+       JOIN contratos c ON c.id = pa.contrato_id
+       WHERE c.cliente_id = ? AND a.fecha BETWEEN ? AND ?
+       ORDER BY a.fecha ASC, a.id ASC`,
+      [clienteId, desde, hasta]
+    );
+    return filas;
+  }
 }

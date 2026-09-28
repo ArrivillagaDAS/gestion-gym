@@ -170,4 +170,31 @@ export class NutricionService {
       conexion.release();
     }
   }
+
+  // solo lee, no modifica nada: no necesita transaccion
+  // el promedio se calcula sobre los dias que tienen alimentos registrados
+  async reporteSemanal(clienteId, inicio) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(inicio) || !fechaExiste(inicio)) {
+      return { exito: false, errores: ["La fecha de inicio de semana no es válida (usa AAAA-MM-DD)."] };
+    }
+
+    const fin = dayjs(inicio).add(6, "day").format("YYYY-MM-DD");
+    const filas = await this.nutricion.listarAlimentosPorRango(clienteId, inicio, fin);
+
+    const dias = [];
+    for (let i = 0; i < 7; i++) {
+      const fecha = dayjs(inicio).add(i, "day").format("YYYY-MM-DD");
+      const alimentos = filas
+        .filter((fila) => fila.fecha === fecha)
+        .map((fila) => ({ ...fila, calorias: Number(fila.calorias) }));
+      const calorias = alimentos.reduce((suma, a) => suma + a.calorias, 0);
+      dias.push({ fecha, alimentos, calorias });
+    }
+
+    const total = dias.reduce((suma, d) => suma + d.calorias, 0);
+    const diasConRegistros = dias.filter((d) => d.alimentos.length > 0).length;
+    const promedio = diasConRegistros > 0 ? total / diasConRegistros : 0;
+
+    return { exito: true, inicio, fin, dias, total, diasConRegistros, promedio };
+  }
 }
