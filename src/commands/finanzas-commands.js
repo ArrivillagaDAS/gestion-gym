@@ -8,12 +8,9 @@ import { FinanzasService } from "../services/finanzas-service.js";
 const clientes = new ClienteService();
 const finanzas = new FinanzasService();
 
-function formatearMonto(monto) {
-  return Number(monto).toFixed(2);
-}
-
-function fechaValida(fecha) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(fecha);
+function numero(texto) {
+  const limpio = texto.trim().replace(",", ".");
+  return limpio === "" ? undefined : Number(limpio);
 }
 
 async function elegirCliente() {
@@ -62,8 +59,13 @@ async function registrarIngreso() {
     },
     {
       type: "input",
+      name: "descripcion",
+      message: "Descripción:",
+    },
+    {
+      type: "input",
       name: "monto",
-      message: "Monto:",
+      message: "Monto (Q):",
     },
     {
       type: "input",
@@ -71,32 +73,113 @@ async function registrarIngreso() {
       message: "Fecha (AAAA-MM-DD):",
       default: dayjs().format("YYYY-MM-DD"),
     },
+  ]);
+
+  try {
+    const resultado = await finanzas.registrar({
+      cliente_id: clienteId,
+      tipo: "ingreso",
+      categoria: datos.categoria,
+      descripcion: datos.descripcion.trim(),
+      monto: numero(datos.monto),
+      fecha: datos.fecha.trim(),
+    });
+
+    if (!resultado.exito) {
+      console.log(chalk.red("No se pudo registrar el ingreso:"));
+
+      resultado.errores.forEach((error) => {
+        console.log(chalk.red(` - ${error}`));
+      });
+
+      return;
+    }
+
+    console.log(
+      chalk.green(
+        `Ingreso registrado correctamente (id: ${resultado.id}).`
+      )
+    );
+  } catch (error) {
+    console.log(
+      chalk.red(
+        "Ocurrió un error inesperado al registrar el ingreso."
+      )
+    );
+    console.log(chalk.gray(error.message));
+  }
+}
+
+async function registrarEgreso() {
+  const datos = await inquirer.prompt([
+    {
+      type: "select",
+      name: "categoria",
+      message: "Tipo de egreso:",
+      choices: [
+        {
+          name: "Servicio",
+          value: "servicio",
+        },
+        {
+          name: "Suplemento",
+          value: "suplemento",
+        },
+        {
+          name: "Gasto operativo",
+          value: "gasto_operativo",
+        },
+      ],
+    },
     {
       type: "input",
       name: "descripcion",
       message: "Descripción:",
     },
+    {
+      type: "input",
+      name: "monto",
+      message: "Monto (Q):",
+    },
+    {
+      type: "input",
+      name: "fecha",
+      message: "Fecha (AAAA-MM-DD):",
+      default: dayjs().format("YYYY-MM-DD"),
+    },
   ]);
 
-  const resultado = await finanzas.registrar({
-    tipo: "ingreso",
-    categoria: datos.categoria,
-    monto: Number(datos.monto),
-    fecha: datos.fecha.trim(),
-    descripcion: datos.descripcion.trim(),
-    cliente_id: clienteId,
-  });
-
-  if (resultado.exito) {
-    console.log(
-      chalk.green(`Ingreso registrado correctamente (id: ${resultado.id}).`)
-    );
-  } else {
-    console.log(chalk.red("No se pudo registrar el ingreso:"));
-
-    resultado.errores.forEach((error) => {
-      console.log(chalk.red(" - " + error));
+  try {
+    const resultado = await finanzas.registrar({
+      tipo: "egreso",
+      categoria: datos.categoria,
+      descripcion: datos.descripcion.trim(),
+      monto: numero(datos.monto),
+      fecha: datos.fecha.trim(),
     });
+
+    if (!resultado.exito) {
+      console.log(chalk.red("No se pudo registrar el egreso:"));
+
+      resultado.errores.forEach((error) => {
+        console.log(chalk.red(` - ${error}`));
+      });
+
+      return;
+    }
+
+    console.log(
+      chalk.green(
+        `Egreso registrado correctamente (id: ${resultado.id}).`
+      )
+    );
+  } catch (error) {
+    console.log(
+      chalk.red(
+        "Ocurrió un error inesperado al registrar el egreso."
+      )
+    );
+    console.log(chalk.gray(error.message));
   }
 }
 
@@ -118,18 +201,6 @@ export async function menuFinanzas() {
             name: "Registrar egreso",
             value: "egreso",
           },
-          {
-            name: "Registrar pago de mensualidad",
-            value: "pago",
-          },
-          {
-            name: "Balance por rango de fechas",
-            value: "rango",
-          },
-          {
-            name: "Balance por cliente",
-            value: "cliente",
-          },
           new inquirer.Separator(),
           {
             name: "Volver",
@@ -141,6 +212,10 @@ export async function menuFinanzas() {
 
     if (opcion === "ingreso") {
       await registrarIngreso();
+    }
+
+    if (opcion === "egreso") {
+      await registrarEgreso();
     }
 
     if (opcion === "volver") {
