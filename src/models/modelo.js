@@ -7,31 +7,36 @@ export class Modelo {
   validar(datos, esquema) {
     for (const campo in esquema) {
       const regla = esquema[campo];
-      const valor = datos[campo];
+      let valor = datos[campo];
 
-      // 1. Requerido
+      // quita espacios al inicio y al final de los textos
+      if (typeof valor === "string") {
+        valor = valor.trim();
+      }
+
+      // campo obligatorio
       if (regla.requerido && (valor === undefined || valor === null || valor === "")) {
         this.errores.push(`El campo "${campo}" es obligatorio.`);
         continue;
       }
 
-      // Si no es requerido y no vino, no seguimos validando
+      // si es opcional y no vino, no hay nada mas que validar
       if (valor === undefined || valor === null || valor === "") continue;
 
-      // 2. Tipo de dato
+      // tipo de dato, nan cuenta como numero invalido
       if (regla.tipo === "string" && typeof valor !== "string") {
         this.errores.push(`El campo "${campo}" debe ser texto.`);
       }
-      if (regla.tipo === "number" && typeof valor !== "number") {
+      if (regla.tipo === "number" && (typeof valor !== "number" || Number.isNaN(valor))) {
         this.errores.push(`El campo "${campo}" debe ser un número.`);
       }
 
-      // 3. Formato con expresión regular (ej. email)
+      // formato con expresion regular
       if (regla.formato && !regla.formato.test(valor)) {
         this.errores.push(`El campo "${campo}" tiene un formato inválido.`);
       }
 
-      // 4. Rango (para números)
+      // rango minimo y maximo
       if (regla.min !== undefined && valor < regla.min) {
         this.errores.push(`El campo "${campo}" debe ser mayor o igual a ${regla.min}.`);
       }
@@ -39,7 +44,7 @@ export class Modelo {
         this.errores.push(`El campo "${campo}" debe ser menor o igual a ${regla.max}.`);
       }
 
-      // 5. Valores permitidos (para ENUM)
+      // valores permitidos
       if (regla.valores && !regla.valores.includes(valor)) {
         this.errores.push(`El campo "${campo}" debe ser uno de: ${regla.valores.join(", ")}.`);
       }
