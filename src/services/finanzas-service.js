@@ -5,55 +5,93 @@ import {
   CATEGORIAS_INGRESO,
   CATEGORIAS_EGRESO,
 } from "../models/movimiento-financiero.js";
-import { ClienteService } from "./cliente-service.js";
-import { ContratoRepository } from "./contrato-repository.js";
 import { FinanzasRepository } from "./finanzas-repository.js";
 
 function fechaExiste(texto) {
   return dayjs(texto).format("YYYY-MM-DD") === texto;
 }
 
+function validarRango(desde, hasta) {
+  const errores = [];
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(desde) || !fechaExiste(desde)) {
+    errores.push("La fecha inicial no existe en el calendario.");
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(hasta) || !fechaExiste(hasta)) {
+    errores.push("La fecha final no existe en el calendario.");
+  }
+
+  if (errores.length === 0 && hasta < desde) {
+    errores.push(
+      "La fecha final no puede ser anterior a la fecha inicial."
+    );
+  }
+
+  return errores;
+}
+
 export class FinanzasService {
   constructor() {
     this.finanzas = new FinanzasRepository();
-    this.clientes = new ClienteService();
-    this.contratos = new ContratoRepository();
   }
 
-  validarMovimiento(datos) {
+  async registrar(datos) {
     const movimiento = new MovimientoFinanciero(datos);
     const errores = [...movimiento.errores];
 
     if (errores.length === 0) {
+      if (movimiento.descripcion.length > 500) {
+        errores.push(
+          "La descripción no puede superar 500 caracteres."
+        );
+      }
+
+      if (!Number.isInteger(movimiento.monto * 100)) {
+        errores.push(
+          "El monto debe tener como máximo dos decimales."
+        );
+      }
+
       if (!fechaExiste(movimiento.fecha)) {
-        errores.push("La fecha no existe en el calendario.");
+        errores.push(
+          "La fecha no existe en el calendario."
+        );
       }
 
-      if (movimiento.descripcion.length > 255) {
-        errores.push("La descripción no puede superar 255 caracteres.");
+      if (
+        movimiento.tipo === "ingreso" &&
+        !CATEGORIAS_INGRESO.includes(movimiento.categoria)
+      ) {
+        errores.push(
+          "La categoría seleccionada no corresponde a un ingreso."
+        );
       }
 
-      if (movimiento.tipo === "ingreso") {
-        if (!CATEGORIAS_INGRESO.includes(movimiento.categoria)) {
-          errores.push("La categoría de ingreso no es válida.");
-        }
+      if (
+        movimiento.tipo === "egreso" &&
+        !CATEGORIAS_EGRESO.includes(movimiento.categoria)
+      ) {
+        errores.push(
+          "La categoría seleccionada no corresponde a un egreso."
+        );
       }
 
-      if (movimiento.tipo === "egreso") {
-        if (!CATEGORIAS_EGRESO.includes(movimiento.categoria)) {
-          errores.push("La categoría de egreso no es válida.");
-        }
+      if (
+        movimiento.tipo === "ingreso" &&
+        !movimiento.cliente_id
+      ) {
+        errores.push(
+          "Los ingresos deben estar asociados a un cliente."
+        );
       }
     }
 
-    return { movimiento, errores };
-  }
-
-  async registrar(datos) {
-    const { movimiento, errores } = this.validarMovimiento(datos);
-
     if (errores.length > 0) {
-      return { exito: false, errores };
+      return {
+        exito: false,
+        errores,
+      };
     }
 
     const conexion = await pool.getConnection();
@@ -61,22 +99,10 @@ export class FinanzasService {
     try {
       await conexion.beginTransaction();
 
-      if (movimiento.cliente_id !== undefined) {
-        const cliente = await this.clientes.buscarPorId(
-          movimiento.cliente_id
-        );
-
-        if (!cliente) {
-          await conexion.rollback();
-
-          return {
-            exito: false,
-            errores: ["El cliente no existe."],
-          };
-        }
-      }
-
-      const id = await this.finanzas.crear(movimiento, conexion);
+      const id = await this.finanzas.crear(
+        movimiento,
+        conexion
+      );
 
       await conexion.commit();
 
@@ -93,17 +119,50 @@ export class FinanzasService {
     }
   }
 
-  async listarPorRango(desde, hasta) {
-    return this.finanzas.listarPorRango(desde, hasta);
+  async listarPorRango(desde, hasta, clienteId = null) {
+    const errores = validarRango(desde, hasta);
+
+    if (errores.length > 0) {
+      return {
+        exito: false,
+        errores,
+      };
+    }
+
+    const movimientos =
+      await this.finanzas.listarPorRango(
+        desde,
+        hasta,
+        clienteId
+      );
+
+    return {
+      exito: true,
+      movimientos,
+    };
   }
 
   async balancePorRango(desde, hasta) {
-    const datos = await this.finanzas.balancePorRango(desde, hasta);
+    const errores = validarRango(desde, hasta);
 
-    const ingresos = Number(datos.ingresos);
-    const egresos = Number(datos.egresos);
+    if (errores.length > 0) {
+      return {
+        exito: false,
+        errores,
+      };
+    }
+
+    const balance =
+      await this.finanzas.balancePorRango(
+        desde,
+        hasta
+      );
+
+    const ingresos = Number(balance.ingresos);
+    const egresos = Number(balance.egresos);
 
     return {
+      exito: true,
       desde,
       hasta,
       ingresos,
@@ -112,17 +171,32 @@ export class FinanzasService {
     };
   }
 
-  async balancePorCliente(clienteId, desde, hasta) {
-    const datos = await this.finanzas.balancePorCliente(
-      clienteId,
-      desde,
-      hasta
-    );
+  async balancePorCliente(
+    clienteId,
+    desde,
+    hasta
+  ) {
+    const errores = validarRango(desde, hasta);
 
-    const ingresos = Number(datos.ingresos);
-    const egresos = Number(datos.egresos);
+    if (errores.length > 0) {
+      return {
+        exito: false,
+        errores,
+      };
+    }
+
+    const balance =
+      await this.finanzas.balancePorCliente(
+        clienteId,
+        desde,
+        hasta
+      );
+
+    const ingresos = Number(balance.ingresos);
+    const egresos = Number(balance.egresos);
 
     return {
+      exito: true,
       clienteId,
       desde,
       hasta,
