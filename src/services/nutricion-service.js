@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { pool } from "../config/database.js";
 import { PlanAlimentacion } from "../models/plan-alimentacion.js";
+import { AlimentoDia } from "../models/alimento-dia.js";
 import { ContratoRepository } from "./contrato-repository.js";
 import { NutricionRepository } from "./nutricion-repository.js";
 
@@ -83,6 +84,83 @@ export class NutricionService {
 
       await conexion.commit();
       return { exito: true, id, plan };
+    } catch (error) {
+      // cualquier falla deshace todo lo hecho dentro de la transaccion
+      await conexion.rollback();
+      throw error;
+    } finally {
+      // la conexion siempre se devuelve al pool
+      conexion.release();
+    }
+  }
+
+  // solo lee, no modifica nada: no necesita transaccion
+  async listarPlanesPorCliente(clienteId) {
+    return this.nutricion.listarPlanesPorCliente(clienteId);
+  }
+
+  async registrarAlimento(datos) {
+    const alimento = new AlimentoDia(datos);
+    const errores = [...alimento.errores];
+
+    if (errores.length === 0) {
+      if (!fechaExiste(alimento.fecha)) {
+        errores.push("La fecha no existe en el calendario.");
+      }
+      if (!Number.isInteger(alimento.calorias)) {
+        errores.push("Las calorías deben ser un número entero.");
+      }
+      if (alimento.alimento.length > 150) {
+        errores.push("El nombre del alimento no puede superar 150 caracteres.");
+      }
+    }
+
+    if (errores.length > 0) {
+      return { exito: false, errores };
+    }
+
+    const conexion = await pool.getConnection();
+
+    try {
+      // accion critica: verificar el contrato y guardar el alimento ocurren juntos o no ocurren
+      await conexion.beginTransaction();
+
+      const plan = await this.nutricion.buscarPlanPorId(alimento.plan_alimentacion_id, conexion);
+      if (!plan) {
+        await conexion.rollback();
+        return { exito: false, errores: ["El plan de alimentación no existe."] };
+      }
+
+      // el bloqueo evita que el contrato se cancele o finalice mientras se registra el alimento
+      const contrato = await this.contratos.bloquearPorId(plan.contrato_id, conexion);
+
+      // regla de negocio: solo se registran alimentos en planes de contratos activos
+      if (!contrato || contrato.estado !== "activo") {
+        await conexion.rollback();
+        return {
+          exito: false,
+          errores: ["El plan pertenece a un contrato que no está activo: es historial y no admite nuevos alimentos."],
+        };
+      }
+
+      // el dia debe caer dentro del plan de alimentacion y dentro del contrato
+      const fueraDelPlan =
+        alimento.fecha < plan.fecha_inicio ||
+        (plan.fecha_fin !== null && alimento.fecha > plan.fecha_fin) ||
+        alimento.fecha > contrato.fecha_fin;
+      if (fueraDelPlan) {
+        await conexion.rollback();
+        const hasta = plan.fecha_fin !== null && plan.fecha_fin < contrato.fecha_fin ? plan.fecha_fin : contrato.fecha_fin;
+        return {
+          exito: false,
+          errores: [`La fecha debe estar dentro del plan de alimentación (${plan.fecha_inicio} a ${hasta}).`],
+        };
+      }
+
+      const id = await this.nutricion.crearAlimento(alimento, conexion);
+
+      await conexion.commit();
+      return { exito: true, id, alimento };
     } catch (error) {
       // cualquier falla deshace todo lo hecho dentro de la transaccion
       await conexion.rollback();

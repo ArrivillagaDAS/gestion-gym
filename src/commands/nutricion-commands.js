@@ -1,6 +1,7 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
 import dayjs from "dayjs";
+import { COMIDAS } from "../models/alimento-dia.js";
 import { ClienteService } from "../services/cliente-service.js";
 import { ContratoService } from "../services/contrato-service.js";
 import { NutricionService } from "../services/nutricion-service.js";
@@ -22,6 +23,11 @@ function formatearFecha(fecha) {
 function textoOpcional(texto) {
   const limpio = texto.trim();
   return limpio === "" ? undefined : limpio;
+}
+
+function numeroOpcional(texto) {
+  const limpio = texto.trim().replace(",", ".");
+  return limpio === "" ? undefined : Number(limpio);
 }
 
 async function elegirCliente() {
@@ -96,6 +102,81 @@ async function crearPlanAlimentacion() {
   }
 }
 
+async function registrarAlimentos() {
+  const clienteId = await elegirCliente();
+  if (clienteId === null) return;
+
+  try {
+    const planes = await nutricion.listarPlanesPorCliente(clienteId);
+    // solo se registran alimentos en planes de contratos activos, el resto es historial
+    const disponibles = planes.filter((p) => p.contrato_estado === "activo");
+
+    if (disponibles.length === 0) {
+      console.log(chalk.yellow("Este cliente no tiene planes de alimentación en contratos activos."));
+      return;
+    }
+
+    const { planId } = await inquirer.prompt([
+      {
+        type: "select",
+        name: "planId",
+        message: "Plan de alimentación:",
+        choices: disponibles.map((p) => ({
+          name:
+            `#${p.id} | ${p.nombre} | ${p.fecha_inicio} a ${p.fecha_fin ?? "sin fecha de fin"}` +
+            ` | contrato #${p.contrato_id} ${p.plan_nombre}`,
+          value: p.id,
+        })),
+      },
+    ]);
+
+    const plan = disponibles.find((p) => p.id === planId);
+    const hoy = dayjs().format("YYYY-MM-DD");
+    // si el plan empieza en el futuro, se sugiere su primer dia
+    let fechaSugerida = hoy < plan.fecha_inicio ? plan.fecha_inicio : hoy;
+    let otro = true;
+
+    while (otro) {
+      const datos = await inquirer.prompt([
+        { type: "input", name: "fecha", message: "Fecha (AAAA-MM-DD):", default: fechaSugerida },
+        { type: "select", name: "comida", message: "Comida:", choices: COMIDAS },
+        { type: "input", name: "alimento", message: "Alimento:" },
+        { type: "input", name: "calorias", message: "Calorías estimadas (kcal):" },
+      ]);
+
+      const resultado = await nutricion.registrarAlimento({
+        plan_alimentacion_id: planId,
+        fecha: datos.fecha.trim(),
+        comida: datos.comida,
+        alimento: datos.alimento.trim(),
+        calorias: numeroOpcional(datos.calorias),
+      });
+
+      if (resultado.exito) {
+        console.log(chalk.green(`Alimento registrado (id: ${resultado.id}).`));
+        // el siguiente alimento suele ser del mismo dia
+        fechaSugerida = datos.fecha.trim();
+      } else {
+        console.log(chalk.red("No se pudo registrar el alimento:"));
+        resultado.errores.forEach((e) => console.log(chalk.red(" - " + e)));
+      }
+
+      const { repetir } = await inquirer.prompt([
+        {
+          type: "confirm",
+          name: "repetir",
+          message: "¿Registrar otro alimento en este plan?",
+          default: true,
+        },
+      ]);
+      otro = repetir;
+    }
+  } catch (error) {
+    console.log(chalk.red("Ocurrió un error inesperado al registrar el alimento."));
+    console.log(chalk.gray(error.message));
+  }
+}
+
 export async function menuNutricion() {
   let volver = false;
 
@@ -107,6 +188,7 @@ export async function menuNutricion() {
         message: chalk.cyan("Menú de Nutrición"),
         choices: [
           { name: "Crear plan de alimentación", value: "crear" },
+          { name: "Registrar alimentos por día", value: "alimentos" },
           new inquirer.Separator(),
           { name: "Volver", value: "volver" },
         ],
@@ -114,6 +196,7 @@ export async function menuNutricion() {
     ]);
 
     if (opcion === "crear") await crearPlanAlimentacion();
+    if (opcion === "alimentos") await registrarAlimentos();
     if (opcion === "volver") volver = true;
   }
 }
