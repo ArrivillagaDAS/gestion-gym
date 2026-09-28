@@ -1,3 +1,5 @@
+import { pool } from "../config/database.js";
+
 export class ContratoRepository {
   async bloquearCliente(clienteId, conexion) {
     const [filas] = await conexion.query(
@@ -30,5 +32,18 @@ export class ContratoRepository {
       ]
     );
     return resultado.insertId;
+  }
+
+  async listarPorCliente(clienteId, conexion = pool) {
+    const [filas] = await conexion.query(
+      `SELECT c.id, c.condiciones, c.precio, c.fecha_inicio, c.fecha_fin, c.estado,
+              p.nombre AS plan_nombre
+       FROM contratos c
+       JOIN planes p ON p.id = c.plan_id
+       WHERE c.cliente_id = ?
+       ORDER BY c.fecha_inicio DESC, c.id DESC`,
+      [clienteId]
+    );
+    return filas;
   }
 }

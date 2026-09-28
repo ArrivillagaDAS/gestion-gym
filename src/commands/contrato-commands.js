@@ -59,6 +59,57 @@ async function asignarPlan() {
   }
 }
 
+function formatearFecha(fecha) {
+  if (fecha instanceof Date) {
+    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+    const dia = String(fecha.getDate()).padStart(2, "0");
+    return `${fecha.getFullYear()}-${mes}-${dia}`;
+  }
+  return String(fecha);
+}
+
+async function consultarContratos() {
+  const listaClientes = await clientes.listarTodos();
+
+  if (listaClientes.length === 0) {
+    console.log(chalk.yellow("No hay clientes registrados."));
+    return;
+  }
+
+  const { clienteId } = await inquirer.prompt([
+    {
+      type: "select",
+      name: "clienteId",
+      message: "Cliente:",
+      choices: listaClientes.map((c) => ({
+        name: `${c.id} - ${c.nombre} ${c.apellido}`,
+        value: c.id,
+      })),
+    },
+  ]);
+
+  try {
+    const lista = await contratos.listarPorCliente(clienteId);
+
+    if (lista.length === 0) {
+      console.log(chalk.yellow("Este cliente no tiene contratos."));
+      return;
+    }
+
+    console.log(chalk.cyan(`\nContratos del cliente (${lista.length}):`));
+    lista.forEach((c) => {
+      console.log(
+        `#${c.id} | ${c.plan_nombre} | ${formatearFecha(c.fecha_inicio)} a ${formatearFecha(c.fecha_fin)} | ` +
+          `${Number(c.precio).toFixed(2)} | ${c.estado}`
+      );
+    });
+    console.log("");
+  } catch (error) {
+    console.log(chalk.red("Ocurrió un error inesperado al consultar los contratos."));
+    console.log(chalk.gray(error.message));
+  }
+}
+
 export async function menuContratos() {
   let volver = false;
 
@@ -70,6 +121,7 @@ export async function menuContratos() {
         message: chalk.cyan("Menú de Contratos"),
         choices: [
           { name: "Asignar plan a cliente", value: "asignar" },
+          { name: "Consultar contratos de un cliente", value: "consultar" },
           new inquirer.Separator(),
           { name: "Volver", value: "volver" },
         ],
@@ -77,6 +129,7 @@ export async function menuContratos() {
     ]);
 
     if (opcion === "asignar") await asignarPlan();
+    if (opcion === "consultar") await consultarContratos();
     if (opcion === "volver") volver = true;
   }
 }
