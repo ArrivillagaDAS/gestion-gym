@@ -4,6 +4,7 @@ import { menuClientes } from "./cliente-commands.js";
 import { menuPlanes } from "./plan-commands.js";
 import { menuContratos } from "./contrato-commands.js";
 import { menuSeguimiento } from "./seguimiento-commands.js";
+import { menuNutricion } from "./nutricion-commands.js";
 
 export async function mostrarMenu() {
   let salir = false;
@@ -41,7 +42,7 @@ export async function mostrarMenu() {
         await menuSeguimiento();
         break;
       case "nutricion":
-        console.log(chalk.yellow("(Aquí irá el submenú de nutrición, próximamente)"));
+        await menuNutricion();
         break;
       case "finanzas":
         console.log(chalk.yellow("(Aquí irá el submenú de finanzas, próximamente)"));
