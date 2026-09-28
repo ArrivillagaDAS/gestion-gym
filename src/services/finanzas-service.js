@@ -11,21 +11,36 @@ import { FinanzasRepository } from "./finanzas-repository.js";
 import { ContratoRepository } from "./contrato-repository.js";
 
 function fechaExiste(texto) {
-  return dayjs(texto).format("YYYY-MM-DD") === texto;
+  return (
+    dayjs(texto).format("YYYY-MM-DD") === texto
+  );
 }
 
 function validarRango(desde, hasta) {
   const errores = [];
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(desde) || !fechaExiste(desde)) {
-    errores.push("La fecha inicial no existe en el calendario.");
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(desde) ||
+    !fechaExiste(desde)
+  ) {
+    errores.push(
+      "La fecha inicial no existe en el calendario."
+    );
   }
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(hasta) || !fechaExiste(hasta)) {
-    errores.push("La fecha final no existe en el calendario.");
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(hasta) ||
+    !fechaExiste(hasta)
+  ) {
+    errores.push(
+      "La fecha final no existe en el calendario."
+    );
   }
 
-  if (errores.length === 0 && hasta < desde) {
+  if (
+    errores.length === 0 &&
+    hasta < desde
+  ) {
     errores.push(
       "La fecha final no puede ser anterior a la fecha inicial."
     );
@@ -36,28 +51,43 @@ function validarRango(desde, hasta) {
 
 export class FinanzasService {
   constructor() {
-    this.finanzas = new FinanzasRepository();
-    this.contratos = new ContratoRepository();
+    this.finanzas =
+      new FinanzasRepository();
+
+    this.contratos =
+      new ContratoRepository();
   }
 
   async registrar(datos) {
-    const movimiento = new MovimientoFinanciero(datos);
-    const errores = [...movimiento.errores];
+    const movimiento =
+      new MovimientoFinanciero(datos);
+
+    const errores =
+      [...movimiento.errores];
 
     if (errores.length === 0) {
-      if (movimiento.descripcion.length > 500) {
+      if (
+        movimiento.descripcion.length >
+        500
+      ) {
         errores.push(
           "La descripción no puede superar 500 caracteres."
         );
       }
 
-      if (!Number.isInteger(movimiento.monto * 100)) {
+      if (
+        !Number.isInteger(
+          movimiento.monto * 100
+        )
+      ) {
         errores.push(
           "El monto debe tener como máximo dos decimales."
         );
       }
 
-      if (!fechaExiste(movimiento.fecha)) {
+      if (
+        !fechaExiste(movimiento.fecha)
+      ) {
         errores.push(
           "La fecha no existe en el calendario."
         );
@@ -65,7 +95,9 @@ export class FinanzasService {
 
       if (
         movimiento.tipo === "ingreso" &&
-        !CATEGORIAS_INGRESO.includes(movimiento.categoria)
+        !CATEGORIAS_INGRESO.includes(
+          movimiento.categoria
+        )
       ) {
         errores.push(
           "La categoría seleccionada no corresponde a un ingreso."
@@ -74,7 +106,9 @@ export class FinanzasService {
 
       if (
         movimiento.tipo === "egreso" &&
-        !CATEGORIAS_EGRESO.includes(movimiento.categoria)
+        !CATEGORIAS_EGRESO.includes(
+          movimiento.categoria
+        )
       ) {
         errores.push(
           "La categoría seleccionada no corresponde a un egreso."
@@ -98,15 +132,17 @@ export class FinanzasService {
       };
     }
 
-    const conexion = await pool.getConnection();
+    const conexion =
+      await pool.getConnection();
 
     try {
       await conexion.beginTransaction();
 
-      const id = await this.finanzas.crear(
-        movimiento,
-        conexion
-      );
+      const id =
+        await this.finanzas.crear(
+          movimiento,
+          conexion
+        );
 
       await conexion.commit();
 
@@ -136,7 +172,10 @@ export class FinanzasService {
       );
     }
 
-    if (!descripcion || descripcion.trim() === "") {
+    if (
+      !descripcion ||
+      descripcion.trim() === ""
+    ) {
       errores.push(
         "La descripción del pago es obligatoria."
       );
@@ -149,16 +188,12 @@ export class FinanzasService {
       };
     }
 
-    const conexion = await pool.getConnection();
+    const conexion =
+      await pool.getConnection();
 
     try {
-      // Operacion critica:
-      // contrato y pago se verifican y registran dentro
-      // de una unica transaccion.
       await conexion.beginTransaction();
 
-      // FOR UPDATE evita que el contrato cambie mientras
-      // se registra el pago.
       const contrato =
         await this.contratos.bloquearPorId(
           contratoId,
@@ -170,11 +205,15 @@ export class FinanzasService {
 
         return {
           exito: false,
-          errores: ["El contrato no existe."],
+          errores: [
+            "El contrato no existe.",
+          ],
         };
       }
 
-      if (contrato.estado !== "activo") {
+      if (
+        contrato.estado !== "activo"
+      ) {
         await conexion.rollback();
 
         return {
@@ -185,7 +224,9 @@ export class FinanzasService {
         };
       }
 
-      if (Number(contrato.precio) <= 0) {
+      if (
+        Number(contrato.precio) <= 0
+      ) {
         await conexion.rollback();
 
         return {
@@ -197,30 +238,43 @@ export class FinanzasService {
       }
 
       const movimiento = {
-        cliente_id: contrato.cliente_id,
+        cliente_id:
+          contrato.cliente_id,
+
         tipo: "ingreso",
-        categoria: "mensualidad",
-        descripcion: descripcion.trim(),
-        monto: Number(contrato.precio),
+
+        categoria:
+          "mensualidad",
+
+        descripcion:
+          descripcion.trim(),
+
+        monto:
+          Number(contrato.precio),
+
         fecha,
       };
 
       const modelo =
-        new MovimientoFinanciero(movimiento);
+        new MovimientoFinanciero(
+          movimiento
+        );
 
       if (modelo.errores.length > 0) {
         await conexion.rollback();
 
         return {
           exito: false,
-          errores: modelo.errores,
+          errores:
+            modelo.errores,
         };
       }
 
-      const id = await this.finanzas.crear(
-        movimiento,
-        conexion
-      );
+      const id =
+        await this.finanzas.crear(
+          movimiento,
+          conexion
+        );
 
       await conexion.commit();
 
@@ -243,10 +297,11 @@ export class FinanzasService {
     hasta,
     clienteId = null
   ) {
-    const errores = validarRango(
-      desde,
-      hasta
-    );
+    const errores =
+      validarRango(
+        desde,
+        hasta
+      );
 
     if (errores.length > 0) {
       return {
@@ -272,10 +327,11 @@ export class FinanzasService {
     desde,
     hasta
   ) {
-    const errores = validarRango(
-      desde,
-      hasta
-    );
+    const errores =
+      validarRango(
+        desde,
+        hasta
+      );
 
     if (errores.length > 0) {
       return {
@@ -290,8 +346,11 @@ export class FinanzasService {
         hasta
       );
 
-    const ingresos = Number(balance.ingresos);
-    const egresos = Number(balance.egresos);
+    const ingresos =
+      Number(balance.ingresos);
+
+    const egresos =
+      Number(balance.egresos);
 
     return {
       exito: true,
@@ -299,7 +358,8 @@ export class FinanzasService {
       hasta,
       ingresos,
       egresos,
-      balance: ingresos - egresos,
+      balance:
+        ingresos - egresos,
     };
   }
 
@@ -308,10 +368,11 @@ export class FinanzasService {
     desde,
     hasta
   ) {
-    const errores = validarRango(
-      desde,
-      hasta
-    );
+    const errores =
+      validarRango(
+        desde,
+        hasta
+      );
 
     if (errores.length > 0) {
       return {
@@ -327,8 +388,11 @@ export class FinanzasService {
         hasta
       );
 
-    const ingresos = Number(balance.ingresos);
-    const egresos = Number(balance.egresos);
+    const ingresos =
+      Number(balance.ingresos);
+
+    const egresos =
+      Number(balance.egresos);
 
     return {
       exito: true,
@@ -337,7 +401,8 @@ export class FinanzasService {
       hasta,
       ingresos,
       egresos,
-      balance: ingresos - egresos,
+      balance:
+        ingresos - egresos,
     };
   }
 }

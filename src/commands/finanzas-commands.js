@@ -6,13 +6,22 @@ import { ClienteService } from "../services/cliente-service.js";
 import { ContratoService } from "../services/contrato-service.js";
 import { FinanzasService } from "../services/finanzas-service.js";
 
-const clientes = new ClienteService();
-const contratos = new ContratoService();
-const finanzas = new FinanzasService();
+const clientes =
+  new ClienteService();
+
+const contratos =
+  new ContratoService();
+
+const finanzas =
+  new FinanzasService();
 
 function numero(texto) {
-  const limpio = texto.trim().replace(",", ".");
-  return limpio === "" ? undefined : Number(limpio);
+  const limpio =
+    texto.trim().replace(",", ".");
+
+  return limpio === ""
+    ? undefined
+    : Number(limpio);
 }
 
 function formatearFecha(fecha) {
@@ -36,11 +45,14 @@ function formatearMonto(monto) {
 }
 
 async function elegirCliente() {
-  const lista = await clientes.listarTodos();
+  const lista =
+    await clientes.listarTodos();
 
   if (lista.length === 0) {
     console.log(
-      chalk.yellow("No hay clientes registrados.")
+      chalk.yellow(
+        "No hay clientes registrados."
+      )
     );
 
     return null;
@@ -52,10 +64,15 @@ async function elegirCliente() {
         type: "select",
         name: "clienteId",
         message: "Cliente:",
-        choices: lista.map((cliente) => ({
-          name: `${cliente.id} - ${cliente.nombre} ${cliente.apellido}`,
-          value: cliente.id,
-        })),
+        choices: lista.map(
+          (cliente) => ({
+            name:
+              `${cliente.id} - ` +
+              `${cliente.nombre} ` +
+              `${cliente.apellido}`,
+            value: cliente.id,
+          })
+        ),
       },
     ]);
 
@@ -73,15 +90,18 @@ async function registrarIngreso() {
       {
         type: "select",
         name: "categoria",
-        message: "Tipo de ingreso:",
+        message:
+          "Tipo de ingreso:",
         choices: [
           {
             name: "Mensualidad",
             value: "mensualidad",
           },
           {
-            name: "Sesión individual",
-            value: "sesion_individual",
+            name:
+              "Sesión individual",
+            value:
+              "sesion_individual",
           },
         ],
       },
@@ -98,22 +118,29 @@ async function registrarIngreso() {
       {
         type: "input",
         name: "fecha",
-        message: "Fecha (AAAA-MM-DD):",
+        message:
+          "Fecha (AAAA-MM-DD):",
         default:
-          dayjs().format("YYYY-MM-DD"),
+          dayjs().format(
+            "YYYY-MM-DD"
+          ),
       },
     ]);
 
   try {
     const resultado =
       await finanzas.registrar({
-        cliente_id: clienteId,
+        cliente_id:
+          clienteId,
         tipo: "ingreso",
-        categoria: datos.categoria,
+        categoria:
+          datos.categoria,
         descripcion:
           datos.descripcion.trim(),
-        monto: numero(datos.monto),
-        fecha: datos.fecha.trim(),
+        monto:
+          numero(datos.monto),
+        fecha:
+          datos.fecha.trim(),
       });
 
     if (!resultado.exito) {
@@ -123,11 +150,15 @@ async function registrarIngreso() {
         )
       );
 
-      resultado.errores.forEach((error) => {
-        console.log(
-          chalk.red(` - ${error}`)
-        );
-      });
+      resultado.errores.forEach(
+        (error) => {
+          console.log(
+            chalk.red(
+              ` - ${error}`
+            )
+          );
+        }
+      );
 
       return;
     }
@@ -145,7 +176,9 @@ async function registrarIngreso() {
     );
 
     console.log(
-      chalk.gray(error.message)
+      chalk.gray(
+        error.message
+      )
     );
   }
 }
@@ -156,7 +189,8 @@ async function registrarEgreso() {
       {
         type: "select",
         name: "categoria",
-        message: "Tipo de egreso:",
+        message:
+          "Tipo de egreso:",
         choices: [
           {
             name: "Servicio",
@@ -167,8 +201,10 @@ async function registrarEgreso() {
             value: "suplemento",
           },
           {
-            name: "Gasto operativo",
-            value: "gasto_operativo",
+            name:
+              "Gasto operativo",
+            value:
+              "gasto_operativo",
           },
         ],
       },
@@ -185,9 +221,12 @@ async function registrarEgreso() {
       {
         type: "input",
         name: "fecha",
-        message: "Fecha (AAAA-MM-DD):",
+        message:
+          "Fecha (AAAA-MM-DD):",
         default:
-          dayjs().format("YYYY-MM-DD"),
+          dayjs().format(
+            "YYYY-MM-DD"
+          ),
       },
     ]);
 
@@ -195,11 +234,14 @@ async function registrarEgreso() {
     const resultado =
       await finanzas.registrar({
         tipo: "egreso",
-        categoria: datos.categoria,
+        categoria:
+          datos.categoria,
         descripcion:
           datos.descripcion.trim(),
-        monto: numero(datos.monto),
-        fecha: datos.fecha.trim(),
+        monto:
+          numero(datos.monto),
+        fecha:
+          datos.fecha.trim(),
       });
 
     if (!resultado.exito) {
@@ -209,11 +251,15 @@ async function registrarEgreso() {
         )
       );
 
-      resultado.errores.forEach((error) => {
-        console.log(
-          chalk.red(` - ${error}`)
-        );
-      });
+      resultado.errores.forEach(
+        (error) => {
+          console.log(
+            chalk.red(
+              ` - ${error}`
+            )
+          );
+        }
+      );
 
       return;
     }
@@ -231,7 +277,9 @@ async function registrarEgreso() {
     );
 
     console.log(
-      chalk.gray(error.message)
+      chalk.gray(
+        error.message
+      )
     );
   }
 }
@@ -248,10 +296,12 @@ async function registrarPagoMensualidad() {
         clienteId
       );
 
-    const activos = lista.filter(
-      (contrato) =>
-        contrato.estado === "activo"
-    );
+    const activos =
+      lista.filter(
+        (contrato) =>
+          contrato.estado ===
+          "activo"
+      );
 
     if (activos.length === 0) {
       console.log(
@@ -270,20 +320,22 @@ async function registrarPagoMensualidad() {
           name: "contratoId",
           message:
             "Contrato para registrar la mensualidad:",
-          choices: activos.map(
-            (contrato) => ({
-              name:
-                `#${contrato.id} | ` +
-                `${contrato.plan_nombre ?? "Plan"} | ` +
-                `Q ${Number(
-                  contrato.precio
-                ).toFixed(2)} | ` +
-                `vence ${formatearFecha(
-                  contrato.fecha_fin
-                )}`,
-              value: contrato.id,
-            })
-          ),
+          choices:
+            activos.map(
+              (contrato) => ({
+                name:
+                  `#${contrato.id} | ` +
+                  `${contrato.plan_nombre ?? "Plan"} | ` +
+                  `Q ${Number(
+                    contrato.precio
+                  ).toFixed(2)} | ` +
+                  `vence ${formatearFecha(
+                    contrato.fecha_fin
+                  )}`,
+                value:
+                  contrato.id,
+              })
+            ),
         },
       ]);
 
@@ -295,12 +347,15 @@ async function registrarPagoMensualidad() {
           message:
             "Fecha del pago (AAAA-MM-DD):",
           default:
-            dayjs().format("YYYY-MM-DD"),
+            dayjs().format(
+              "YYYY-MM-DD"
+            ),
         },
         {
           type: "input",
           name: "descripcion",
-          message: "Descripción:",
+          message:
+            "Descripción:",
           default:
             "Pago de mensualidad",
         },
@@ -320,11 +375,15 @@ async function registrarPagoMensualidad() {
         )
       );
 
-      resultado.errores.forEach((error) => {
-        console.log(
-          chalk.red(` - ${error}`)
-        );
-      });
+      resultado.errores.forEach(
+        (error) => {
+          console.log(
+            chalk.red(
+              ` - ${error}`
+            )
+          );
+        }
+      );
 
       return;
     }
@@ -350,7 +409,105 @@ async function registrarPagoMensualidad() {
     );
 
     console.log(
-      chalk.gray(error.message)
+      chalk.gray(
+        error.message
+      )
+    );
+  }
+}
+
+async function verBalanceRango() {
+  const datos =
+    await inquirer.prompt([
+      {
+        type: "input",
+        name: "desde",
+        message:
+          "Fecha inicial (AAAA-MM-DD):",
+        default:
+          dayjs()
+            .startOf("month")
+            .format(
+              "YYYY-MM-DD"
+            ),
+      },
+      {
+        type: "input",
+        name: "hasta",
+        message:
+          "Fecha final (AAAA-MM-DD):",
+        default:
+          dayjs().format(
+            "YYYY-MM-DD"
+          ),
+      },
+    ]);
+
+  try {
+    const resultado =
+      await finanzas.balancePorRango(
+        datos.desde.trim(),
+        datos.hasta.trim()
+      );
+
+    if (!resultado.exito) {
+      console.log(
+        chalk.red(
+          "No se pudo consultar el balance:"
+        )
+      );
+
+      resultado.errores.forEach(
+        (error) => {
+          console.log(
+            chalk.red(
+              ` - ${error}`
+            )
+          );
+        }
+      );
+
+      return;
+    }
+
+    console.log(
+      chalk.cyan(
+        "\nBalance financiero"
+      )
+    );
+
+    console.log(
+      `Periodo: ${resultado.desde} a ${resultado.hasta}`
+    );
+
+    console.log(
+      `Ingresos: ${formatearMonto(
+        resultado.ingresos
+      )}`
+    );
+
+    console.log(
+      `Egresos: ${formatearMonto(
+        resultado.egresos
+      )}`
+    );
+
+    console.log(
+      `Balance: ${formatearMonto(
+        resultado.balance
+      )}`
+    );
+  } catch (error) {
+    console.log(
+      chalk.red(
+        "Ocurrió un error inesperado al consultar el balance."
+      )
+    );
+
+    console.log(
+      chalk.gray(
+        error.message
+      )
     );
   }
 }
@@ -365,25 +522,39 @@ export async function menuFinanzas() {
           type: "select",
           name: "opcion",
           message:
-            chalk.cyan("Menú de Finanzas"),
+            chalk.cyan(
+              "Menú de Finanzas"
+            ),
           choices: [
             {
-              name: "Registrar ingreso",
-              value: "ingreso",
+              name:
+                "Registrar ingreso",
+              value:
+                "ingreso",
             },
             {
-              name: "Registrar egreso",
-              value: "egreso",
+              name:
+                "Registrar egreso",
+              value:
+                "egreso",
             },
             {
               name:
                 "Registrar pago de mensualidad",
-              value: "mensualidad",
+              value:
+                "mensualidad",
+            },
+            {
+              name:
+                "Consultar balance por rango de fechas",
+              value:
+                "balance_rango",
             },
             new inquirer.Separator(),
             {
               name: "Volver",
-              value: "volver",
+              value:
+                "volver",
             },
           ],
         },
@@ -397,11 +568,22 @@ export async function menuFinanzas() {
       await registrarEgreso();
     }
 
-    if (opcion === "mensualidad") {
+    if (
+      opcion === "mensualidad"
+    ) {
       await registrarPagoMensualidad();
     }
 
-    if (opcion === "volver") {
+    if (
+      opcion ===
+      "balance_rango"
+    ) {
+      await verBalanceRango();
+    }
+
+    if (
+      opcion === "volver"
+    ) {
       volver = true;
     }
   }
