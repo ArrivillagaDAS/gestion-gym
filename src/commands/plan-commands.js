@@ -6,7 +6,7 @@ const service = new PlanService();
 
 async function crearPlan() {
   const datos = await inquirer.prompt([
-    { type: "input", name: "nombre", message: "Nombre del plan:" },
+    { type: "input", name: "nombre", message: "Nombre del plan:", validate: (v) => v.trim() !== "" || "El nombre es obligatorio." },
     {
       type: "number",
       name: "duracion_semanas",

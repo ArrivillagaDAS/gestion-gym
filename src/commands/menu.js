@@ -17,6 +17,7 @@ export async function mostrarMenu() {
         type: "select",
         name: "opcion",
         message: chalk.cyan("Gestión de Gimnasio — Menú principal"),
+        loop: false,
         choices: [
           {
             name: "Clientes",
