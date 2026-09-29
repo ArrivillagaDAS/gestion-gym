@@ -51,7 +51,7 @@ export class ContratoRepository {
   // las fechas salen ya como texto YYYY-MM-DD para evitar problemas de zona horaria
   async bloquearPorId(id, conexion) {
     const [filas] = await conexion.query(
-      `SELECT id, cliente_id, plan_id, estado,
+      `SELECT id, cliente_id, plan_id, precio, estado,
               DATE_FORMAT(fecha_fin, '%Y-%m-%d') AS fecha_fin
        FROM contratos WHERE id = ? FOR UPDATE`,
       [id]

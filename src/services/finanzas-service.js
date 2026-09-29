@@ -16,6 +16,13 @@ function fechaExiste(texto) {
   );
 }
 
+function tieneMaximoDosDecimales(monto) {
+  // monto * 100 puede dar 114.99999999999999 por punto flotante,
+  // asi que se compara con tolerancia en vez de exigir un entero exacto
+  const centavos = monto * 100;
+  return Math.abs(centavos - Math.round(centavos)) < 1e-6;
+}
+
 function validarRango(desde, hasta) {
   const errores = [];
 
@@ -76,8 +83,8 @@ export class FinanzasService {
       }
 
       if (
-        !Number.isInteger(
-          movimiento.monto * 100
+        !tieneMaximoDosDecimales(
+          movimiento.monto
         )
       ) {
         errores.push(
