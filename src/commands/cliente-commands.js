@@ -6,8 +6,8 @@ const service = new ClienteService();
 
 async function crearCliente() {
   const datos = await inquirer.prompt([
-    { type: "input", name: "nombre", message: "Nombre:" },
-    { type: "input", name: "apellido", message: "Apellido:" },
+    { type: "input", name: "nombre", message: "Nombre:", validate: (v) => v.trim() !== "" || "El nombre es obligatorio." },
+    { type: "input", name: "apellido", message: "Apellido:", validate: (v) => v.trim() !== "" || "El apellido es obligatorio." },
     { type: "input", name: "email", message: "Email (opcional):" },
     { type: "input", name: "telefono", message: "Teléfono (opcional):" },
     {
@@ -97,8 +97,8 @@ async function actualizarCliente() {
   const actual = await service.buscarPorId(id);
 
   const datos = await inquirer.prompt([
-    { type: "input", name: "nombre", message: "Nombre:", default: actual.nombre },
-    { type: "input", name: "apellido", message: "Apellido:", default: actual.apellido },
+    { type: "input", name: "nombre", message: "Nombre:", default: actual.nombre, validate: (v) => v.trim() !== "" || "El nombre es obligatorio." },
+    { type: "input", name: "apellido", message: "Apellido:", default: actual.apellido, validate: (v) => v.trim() !== "" || "El apellido es obligatorio." },
     { type: "input", name: "email", message: "Email (opcional):", default: actual.email ?? "" },
     { type: "input", name: "telefono", message: "Teléfono (opcional):", default: actual.telefono ?? "" },
     {
@@ -202,7 +202,7 @@ async function eliminarCliente() {
 
 function formatearFechaParaEditar(fecha) {
   if (!fecha) return "";
-  const iso = new Date(fecha).toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const iso = new Date(fecha).toISOString().slice(0, 10); // formato aaaa-mm-dd
   const [anio, mes, dia] = iso.split("-");
   return `${dia}${mes}${anio}`;
 }
