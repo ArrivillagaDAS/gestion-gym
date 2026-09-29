@@ -76,3 +76,5 @@ Las operaciones críticas (asignar/renovar/cancelar un plan, registrar el pago d
 El proyecto se desarrolló con un backlog en GitHub Projects, ramas `feature/`, `fix/` y `docs/` desde `develop`, y Pull Requests hacia `develop`. Cada sprint se integró a `main` al completarse.
 
 ## Video de presentación
+
+[link a video explicativo de la app en uso <--](https://drive.google.com/drive/folders/1okg0p2OLBYAmBquQIgQGc3C-1WH2Z2JX?usp=drive_link)
