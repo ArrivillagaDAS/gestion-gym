@@ -82,3 +82,16 @@ CREATE TABLE movimientos (
   FOREIGN KEY (cliente_id) REFERENCES clientes(id),
   FOREIGN KEY (contrato_id) REFERENCES contratos(id)
 );
+
+-- bloque 8: movimientos_financieros (usada por el modulo de Finanzas)
+CREATE TABLE movimientos_financieros (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  cliente_id INT NULL,
+  tipo ENUM('ingreso', 'egreso') NOT NULL,
+  categoria VARCHAR(100) NOT NULL,
+  descripcion VARCHAR(500) NOT NULL,
+  monto DECIMAL(10,2) NOT NULL,
+  fecha DATE NOT NULL,
+  FOREIGN KEY (cliente_id) REFERENCES clientes(id),
+  INDEX idx_movimientos_financieros_fecha (fecha)
+);
