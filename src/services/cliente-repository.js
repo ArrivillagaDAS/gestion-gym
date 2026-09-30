@@ -5,13 +5,19 @@ export class ClienteRepository {
     const [resultado] = await pool.query(
       `INSERT INTO clientes (nombre, apellido, email, telefono, fecha_nacimiento)
        VALUES (?, ?, ?, ?, ?)`,
-      [cliente.nombre, cliente.apellido, cliente.email, cliente.telefono, cliente.fecha_nacimiento]
+      [
+        cliente.nombre,
+        cliente.apellido,
+        cliente.email ?? null,
+        cliente.telefono ?? null,
+        cliente.fecha_nacimiento ?? null,
+      ]
     );
     return resultado.insertId;
   }
 
   async listarTodos() {
-    const [filas] = await pool.query("SELECT * FROM clientes");
+    const [filas] = await pool.query("SELECT * FROM clientes ORDER BY id");
     return filas;
   }
 
@@ -24,7 +30,14 @@ export class ClienteRepository {
     await pool.query(
       `UPDATE clientes SET nombre = ?, apellido = ?, email = ?, telefono = ?, fecha_nacimiento = ?
        WHERE id = ?`,
-      [cliente.nombre, cliente.apellido, cliente.email, cliente.telefono, cliente.fecha_nacimiento, id]
+      [
+        cliente.nombre,
+        cliente.apellido,
+        cliente.email ?? null,
+        cliente.telefono ?? null,
+        cliente.fecha_nacimiento ?? null,
+        id,
+      ]
     );
   }
 

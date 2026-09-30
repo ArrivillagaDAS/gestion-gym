@@ -5,6 +5,8 @@ import dayjs from "dayjs";
 import { ClienteService } from "../services/cliente-service.js";
 import { ContratoService } from "../services/contrato-service.js";
 import { FinanzasService } from "../services/finanzas-service.js";
+import { formatearFecha } from "../utils/fechas.js";
+import { numeroOpcional } from "../utils/entrada.js";
 
 const clientes =
   new ClienteService();
@@ -14,31 +16,6 @@ const contratos =
 
 const finanzas =
   new FinanzasService();
-
-function numero(texto) {
-  const limpio =
-    texto.trim().replace(",", ".");
-
-  return limpio === ""
-    ? undefined
-    : Number(limpio);
-}
-
-function formatearFecha(fecha) {
-  if (fecha instanceof Date) {
-    const mes = String(
-      fecha.getMonth() + 1
-    ).padStart(2, "0");
-
-    const dia = String(
-      fecha.getDate()
-    ).padStart(2, "0");
-
-    return `${fecha.getFullYear()}-${mes}-${dia}`;
-  }
-
-  return String(fecha);
-}
 
 function formatearMonto(monto) {
   return `Q ${Number(monto).toFixed(2)}`;
@@ -138,7 +115,7 @@ async function registrarIngreso() {
         descripcion:
           datos.descripcion.trim(),
         monto:
-          numero(datos.monto),
+          numeroOpcional(datos.monto),
         fecha:
           datos.fecha.trim(),
       });
@@ -239,7 +216,7 @@ async function registrarEgreso() {
         descripcion:
           datos.descripcion.trim(),
         monto:
-          numero(datos.monto),
+          numeroOpcional(datos.monto),
         fecha:
           datos.fecha.trim(),
       });

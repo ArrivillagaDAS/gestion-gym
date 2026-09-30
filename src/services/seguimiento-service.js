@@ -15,10 +15,8 @@ export class SeguimientoService {
     const errores = [...seguimiento.errores];
 
     if (errores.length === 0) {
-      const fecha = dayjs(seguimiento.fecha);
-      if (fecha.format("YYYY-MM-DD") !== seguimiento.fecha) {
-        errores.push("La fecha no existe en el calendario.");
-      } else if (fecha.isAfter(dayjs(), "day")) {
+      // el modelo ya comprobo que la fecha existe en el calendario
+      if (dayjs(seguimiento.fecha).isAfter(dayjs(), "day")) {
         errores.push("La fecha no puede ser futura.");
       }
 

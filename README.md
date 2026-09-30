@@ -18,6 +18,8 @@ config/      conexion a la base de datos
 models/      clases con validaciones por campo
 services/    repositorios (SQL) y servicios (reglas de negocio y transacciones)
 commands/    menus e interaccion con el usuario
+utils/       funciones compartidas (fechas y lectura de datos escritos por el usuario)
+scripts/     utilidades, como la generacion del PDF de planeacion
 sql/         script de creacion de tablas
 docs/        documentacion adicional
 ```
@@ -30,13 +32,13 @@ docs/        documentacion adicional
    npm install
    ```
 
-2. Crea la base de datos y ejecuta el script:
+2. Ejecuta el script (crea la base de datos `gimnasio_db` y las tablas; requiere MySQL 8.0.13 o superior):
 
    ```
    mysql -u root -p < sql/schema.sql
    ```
 
-   (o pégalo en MySQL Workbench, con `USE gimnasio_db;` al inicio)
+   (o pégalo en MySQL Workbench)
 
 3. Crea un archivo `.env` en la raíz con:
 

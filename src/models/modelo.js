@@ -1,3 +1,5 @@
+import { fechaExiste } from "../utils/fechas.js";
+
 export class Modelo {
   constructor(datos, esquema) {
     this.errores = [];
@@ -31,9 +33,21 @@ export class Modelo {
         this.errores.push(`El campo "${campo}" debe ser un número.`);
       }
 
-      // formato con expresion regular
+      // numero sin decimales
+      if (regla.entero && typeof valor === "number" && !Number.isNaN(valor) && !Number.isInteger(valor)) {
+        this.errores.push(`El campo "${campo}" debe ser un número entero.`);
+      }
+
+      // formato con expresion regular; si el campo es una fecha, ademas debe existir en el calendario
       if (regla.formato && !regla.formato.test(valor)) {
         this.errores.push(`El campo "${campo}" tiene un formato inválido.`);
+      } else if (regla.fecha && !fechaExiste(valor)) {
+        this.errores.push(`El campo "${campo}" no es una fecha válida del calendario.`);
+      }
+
+      // largo maximo de los textos, para no chocar con el tamaño de la columna
+      if (regla.maxLength !== undefined && typeof valor === "string" && valor.length > regla.maxLength) {
+        this.errores.push(`El campo "${campo}" no puede superar ${regla.maxLength} caracteres.`);
       }
 
       // rango minimo y maximo

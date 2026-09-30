@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import { pool } from "../config/database.js";
+import { fechaExiste } from "../utils/fechas.js";
 
 import {
   MovimientoFinanciero,
@@ -9,12 +9,7 @@ import {
 
 import { FinanzasRepository } from "./finanzas-repository.js";
 import { ContratoRepository } from "./contrato-repository.js";
-
-function fechaExiste(texto) {
-  return (
-    dayjs(texto).format("YYYY-MM-DD") === texto
-  );
-}
+import { ClienteRepository } from "./cliente-repository.js";
 
 function tieneMaximoDosDecimales(monto) {
   // monto * 100 puede dar 114.99999999999999 por punto flotante,
@@ -23,22 +18,21 @@ function tieneMaximoDosDecimales(monto) {
   return Math.abs(centavos - Math.round(centavos)) < 1e-6;
 }
 
+// los montos salen de DECIMAL: se redondea a centavos para evitar 0.1 + 0.2 = 0.30000000000000004
+function redondear(monto) {
+  return Math.round(monto * 100) / 100;
+}
+
 function validarRango(desde, hasta) {
   const errores = [];
 
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(desde) ||
-    !fechaExiste(desde)
-  ) {
+  if (!fechaExiste(desde)) {
     errores.push(
       "La fecha inicial no existe en el calendario."
     );
   }
 
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(hasta) ||
-    !fechaExiste(hasta)
-  ) {
+  if (!fechaExiste(hasta)) {
     errores.push(
       "La fecha final no existe en el calendario."
     );
@@ -63,6 +57,9 @@ export class FinanzasService {
 
     this.contratos =
       new ContratoRepository();
+
+    this.clientes =
+      new ClienteRepository();
   }
 
   async registrar(datos) {
@@ -74,29 +71,12 @@ export class FinanzasService {
 
     if (errores.length === 0) {
       if (
-        movimiento.descripcion.length >
-        500
-      ) {
-        errores.push(
-          "La descripción no puede superar 500 caracteres."
-        );
-      }
-
-      if (
         !tieneMaximoDosDecimales(
           movimiento.monto
         )
       ) {
         errores.push(
           "El monto debe tener como máximo dos decimales."
-        );
-      }
-
-      if (
-        !fechaExiste(movimiento.fecha)
-      ) {
-        errores.push(
-          "La fecha no existe en el calendario."
         );
       }
 
@@ -128,6 +108,23 @@ export class FinanzasService {
       ) {
         errores.push(
           "Los ingresos deben estar asociados a un cliente."
+        );
+      }
+    }
+
+    // el cliente debe existir, si no la clave foranea rompe el INSERT
+    if (
+      errores.length === 0 &&
+      movimiento.cliente_id !== undefined
+    ) {
+      const cliente =
+        await this.clientes.buscarPorId(
+          movimiento.cliente_id
+        );
+
+      if (!cliente) {
+        errores.push(
+          "El cliente no existe."
         );
       }
     }
@@ -366,7 +363,7 @@ export class FinanzasService {
       ingresos,
       egresos,
       balance:
-        ingresos - egresos,
+        redondear(ingresos - egresos),
     };
   }
 
@@ -409,7 +406,7 @@ export class FinanzasService {
       ingresos,
       egresos,
       balance:
-        ingresos - egresos,
+        redondear(ingresos - egresos),
     };
   }
 }

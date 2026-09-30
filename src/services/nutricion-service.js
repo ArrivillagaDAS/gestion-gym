@@ -1,14 +1,10 @@
 import dayjs from "dayjs";
 import { pool } from "../config/database.js";
+import { fechaExiste } from "../utils/fechas.js";
 import { PlanAlimentacion } from "../models/plan-alimentacion.js";
 import { AlimentoDia } from "../models/alimento-dia.js";
 import { ContratoRepository } from "./contrato-repository.js";
 import { NutricionRepository } from "./nutricion-repository.js";
-
-// una fecha es real si al leerla y volver a escribirla queda igual (2026-02-31 no pasa)
-function fechaExiste(texto) {
-  return dayjs(texto).format("YYYY-MM-DD") === texto;
-}
 
 export class NutricionService {
   constructor() {
@@ -20,23 +16,9 @@ export class NutricionService {
     const plan = new PlanAlimentacion(datos);
     const errores = [...plan.errores];
 
-    if (errores.length === 0) {
-      if (plan.nombre.length > 100) {
-        errores.push("El nombre del plan no puede superar 100 caracteres.");
-      }
-
-      const inicioValido = fechaExiste(plan.fecha_inicio);
-      if (!inicioValido) {
-        errores.push("La fecha de inicio no existe en el calendario.");
-      }
-
-      if (plan.fecha_fin !== undefined) {
-        if (!fechaExiste(plan.fecha_fin)) {
-          errores.push("La fecha de fin no existe en el calendario.");
-        } else if (inicioValido && plan.fecha_fin < plan.fecha_inicio) {
-          errores.push("La fecha de fin no puede ser anterior a la fecha de inicio.");
-        }
-      }
+    // el modelo ya comprobo que las fechas existen y tienen formato AAAA-MM-DD
+    if (errores.length === 0 && plan.fecha_fin !== undefined && plan.fecha_fin < plan.fecha_inicio) {
+      errores.push("La fecha de fin no puede ser anterior a la fecha de inicio.");
     }
 
     if (errores.length > 0) {
@@ -100,23 +82,11 @@ export class NutricionService {
   }
 
   async registrarAlimento(datos) {
+    // el modelo valida la fecha, las calorias enteras y el largo del nombre del alimento
     const alimento = new AlimentoDia(datos);
-    const errores = [...alimento.errores];
 
-    if (errores.length === 0) {
-      if (!fechaExiste(alimento.fecha)) {
-        errores.push("La fecha no existe en el calendario.");
-      }
-      if (!Number.isInteger(alimento.calorias)) {
-        errores.push("Las calorías deben ser un número entero.");
-      }
-      if (alimento.alimento.length > 150) {
-        errores.push("El nombre del alimento no puede superar 150 caracteres.");
-      }
-    }
-
-    if (errores.length > 0) {
-      return { exito: false, errores };
+    if (!alimento.esValido()) {
+      return { exito: false, errores: alimento.errores };
     }
 
     const conexion = await pool.getConnection();
@@ -174,7 +144,7 @@ export class NutricionService {
   // solo lee, no modifica nada: no necesita transaccion
   // el promedio se calcula sobre los dias que tienen alimentos registrados
   async reporteSemanal(clienteId, inicio) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(inicio) || !fechaExiste(inicio)) {
+    if (!fechaExiste(inicio)) {
       return { exito: false, errores: ["La fecha de inicio de semana no es válida (usa AAAA-MM-DD)."] };
     }
 
