@@ -5,13 +5,13 @@ export class PlanRepository {
     const [resultado] = await pool.query(
       `INSERT INTO planes (nombre, duracion_semanas, metas_fisicas, nivel, precio)
        VALUES (?, ?, ?, ?, ?)`,
-      [plan.nombre, plan.duracion_semanas, plan.metas_fisicas, plan.nivel, plan.precio]
+      [plan.nombre, plan.duracion_semanas, plan.metas_fisicas ?? null, plan.nivel, plan.precio]
     );
     return resultado.insertId;
   }
 
   async listarTodos() {
-    const [filas] = await pool.query("SELECT * FROM planes");
+    const [filas] = await pool.query("SELECT * FROM planes ORDER BY id");
     return filas;
   }
 
