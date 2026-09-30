@@ -11,7 +11,7 @@ async function crearPlan() {
       type: "number",
       name: "duracion_semanas",
       message: "Duración en semanas:",
-      validate: (v) => (typeof v === "number" && !Number.isNaN(v) && v >= 1) || "Escribe un número mayor o igual a 1.",
+      validate: (v) => (Number.isInteger(v) && v >= 1) || "Escribe un número entero mayor o igual a 1.",
     },
     { type: "input", name: "metas_fisicas", message: "Metas físicas (opcional):" },
     {

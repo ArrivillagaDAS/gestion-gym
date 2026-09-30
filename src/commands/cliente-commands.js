@@ -1,8 +1,23 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
 import { ClienteService } from "../services/cliente-service.js";
+import { formatearFecha } from "../utils/fechas.js";
 
 const service = new ClienteService();
+
+// el usuario escribe solo los numeros (DDMMAAAA) y se le muestran con barras
+function mostrarFechaEscrita(valor) {
+  const soloNumeros = valor.replace(/\D/g, "").slice(0, 8);
+  const partes = [soloNumeros.slice(0, 2), soloNumeros.slice(2, 4), soloNumeros.slice(4, 8)];
+  return partes.filter(Boolean).join("/");
+}
+
+// convierte DDMMAAAA en AAAA-MM-DD; si esta incompleta se deja igual para que el modelo la rechace
+function convertirFechaNacimiento(texto) {
+  const numeros = texto.replace(/\D/g, "");
+  if (numeros.length !== 8) return texto.trim();
+  return `${numeros.slice(4, 8)}-${numeros.slice(2, 4)}-${numeros.slice(0, 2)}`;
+}
 
 async function crearCliente() {
   const datos = await inquirer.prompt([
@@ -14,21 +29,11 @@ async function crearCliente() {
       type: "input",
       name: "fecha_nacimiento",
       message: "Fecha de nacimiento (solo escribe los números, opcional):",
-      transformer: (valor) => {
-        const soloNumeros = valor.replace(/\D/g, "").slice(0, 8);
-        const partes = [soloNumeros.slice(0, 2), soloNumeros.slice(2, 4), soloNumeros.slice(4, 8)];
-        return partes.filter(Boolean).join("/");
-      },
+      transformer: mostrarFechaEscrita,
     },
   ]);
 
-  if (datos.fecha_nacimiento) {
-    const texto = datos.fecha_nacimiento.replace(/\D/g, "");
-    const dia = texto.slice(0, 2);
-    const mes = texto.slice(2, 4);
-    const anio = texto.slice(4, 8);
-    datos.fecha_nacimiento = `${anio}-${mes}-${dia}`;
-  }
+  datos.fecha_nacimiento = convertirFechaNacimiento(datos.fecha_nacimiento);
 
   if (!datos.email) {
     datos.email = null;
@@ -106,23 +111,11 @@ async function actualizarCliente() {
       name: "fecha_nacimiento",
       message: "Fecha de nacimiento (solo escribe los números, opcional):",
       default: formatearFechaParaEditar(actual.fecha_nacimiento),
-      transformer: (valor) => {
-        const soloNumeros = valor.replace(/\D/g, "").slice(0, 8);
-        const partes = [soloNumeros.slice(0, 2), soloNumeros.slice(2, 4), soloNumeros.slice(4, 8)];
-        return partes.filter(Boolean).join("/");
-      },
+      transformer: mostrarFechaEscrita,
     },
   ]);
 
-  if (datos.fecha_nacimiento) {
-    const texto = datos.fecha_nacimiento.replace(/\D/g, "");
-    if (texto.length === 8) {
-      const dia = texto.slice(0, 2);
-      const mes = texto.slice(2, 4);
-      const anio = texto.slice(4, 8);
-      datos.fecha_nacimiento = `${anio}-${mes}-${dia}`;
-    }
-  }
+  datos.fecha_nacimiento = convertirFechaNacimiento(datos.fecha_nacimiento);
 
   if (!datos.email) {
     datos.email = null;
@@ -202,8 +195,8 @@ async function eliminarCliente() {
 
 function formatearFechaParaEditar(fecha) {
   if (!fecha) return "";
-  const iso = new Date(fecha).toISOString().slice(0, 10); // formato aaaa-mm-dd
-  const [anio, mes, dia] = iso.split("-");
+  // toISOString pasa a UTC y en algunas zonas horarias mueve la fecha un dia
+  const [anio, mes, dia] = formatearFecha(fecha).split("-");
   return `${dia}${mes}${anio}`;
 }
 

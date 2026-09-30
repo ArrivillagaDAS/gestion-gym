@@ -8,6 +8,20 @@ import { menuSeguimiento } from "./seguimiento-commands.js";
 import { menuNutricion } from "./nutricion-commands.js";
 import { menuFinanzas } from "./finanzas-commands.js";
 
+// un error no controlado dentro de un submenu (por ejemplo, la base de datos caida)
+// no debe cerrar toda la aplicacion: se muestra y se vuelve al menu principal
+async function abrirSubmenu(submenu) {
+  try {
+    await submenu();
+  } catch (error) {
+    // Ctrl+C se deja pasar para que index.js cierre la aplicacion
+    if (error.name === "ExitPromptError") throw error;
+
+    console.log(chalk.red("Ocurrió un error inesperado."));
+    console.log(chalk.gray(error.message));
+  }
+}
+
 export async function mostrarMenu() {
   let salir = false;
 
@@ -54,27 +68,27 @@ export async function mostrarMenu() {
 
     switch (opcion) {
       case "clientes":
-        await menuClientes();
+        await abrirSubmenu(menuClientes);
         break;
 
       case "planes":
-        await menuPlanes();
+        await abrirSubmenu(menuPlanes);
         break;
 
       case "contratos":
-        await menuContratos();
+        await abrirSubmenu(menuContratos);
         break;
 
       case "seguimiento":
-        await menuSeguimiento();
+        await abrirSubmenu(menuSeguimiento);
         break;
 
       case "nutricion":
-        await menuNutricion();
+        await abrirSubmenu(menuNutricion);
         break;
 
       case "finanzas":
-        await menuFinanzas();
+        await abrirSubmenu(menuFinanzas);
         break;
 
       case "salir":

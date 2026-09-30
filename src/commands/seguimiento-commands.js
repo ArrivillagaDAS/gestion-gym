@@ -4,30 +4,12 @@ import dayjs from "dayjs";
 import { ClienteService } from "../services/cliente-service.js";
 import { ContratoService } from "../services/contrato-service.js";
 import { SeguimientoService } from "../services/seguimiento-service.js";
+import { formatearFecha } from "../utils/fechas.js";
+import { textoOpcional, numeroOpcional } from "../utils/entrada.js";
 
 const clientes = new ClienteService();
 const contratos = new ContratoService();
 const seguimientos = new SeguimientoService();
-
-function formatearFecha(fecha) {
-  if (fecha instanceof Date) {
-    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-    const dia = String(fecha.getDate()).padStart(2, "0");
-    return `${fecha.getFullYear()}-${mes}-${dia}`;
-  }
-  return String(fecha);
-}
-
-// texto vacio se convierte en undefined para que el modelo lo trate como no enviado
-function textoOpcional(texto) {
-  const limpio = texto.trim();
-  return limpio === "" ? undefined : limpio;
-}
-
-function numeroOpcional(texto) {
-  const limpio = texto.trim().replace(",", ".");
-  return limpio === "" ? undefined : Number(limpio);
-}
 
 function formatearVariacion(valor) {
   return `${valor > 0 ? "+" : ""}${valor.toFixed(2)}`;

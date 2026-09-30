@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { ClienteService } from "../services/cliente-service.js";
 import { PlanService } from "../services/plan-service.js";
 import { ContratoService } from "../services/contrato-service.js";
+import { formatearFecha } from "../utils/fechas.js";
 
 const clientes = new ClienteService();
 const planes = new PlanService();
@@ -57,15 +58,6 @@ async function asignarPlan() {
     console.log(chalk.red("Ocurrió un error inesperado al asignar el plan."));
     console.log(chalk.gray(error.message));
   }
-}
-
-function formatearFecha(fecha) {
-  if (fecha instanceof Date) {
-    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-    const dia = String(fecha.getDate()).padStart(2, "0");
-    return `${fecha.getFullYear()}-${mes}-${dia}`;
-  }
-  return String(fecha);
 }
 
 async function consultarContratos() {
