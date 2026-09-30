@@ -1,11 +1,14 @@
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 // funcion para generar la documentacion formal del proyecto
 function generarPDF() {
   const doc = new PDFDocument({ margin: 50, autoFirstPage: true });
-  const rutaSalida = path.join(process.cwd(), "Planeacion_SCRUM.pdf");
+  // el PDF se guarda en la raiz del proyecto sin importar desde donde se ejecute el script
+  const raizProyecto = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const rutaSalida = path.join(raizProyecto, "Planeacion_SCRUM.pdf");
   const stream = fs.createWriteStream(rutaSalida);
 
   doc.pipe(stream);
@@ -86,9 +89,9 @@ function generarPDF() {
     descripcion: "Como entrenador quiero registrar clientes para gestionar su historial personal y físico.",
     funcionalidad: "Permite agregar, editar, listar y eliminar clientes validando datos obligatorios.",
     criterios: [
-      "1. El sistema debe validar que el documento sea único.",
+      "1. El sistema debe validar que el correo electrónico sea único.",
       "2. Permite actualizar teléfono y correo electrónico.",
-      "3. Permite eliminación lógica o física comprobando contratos."
+      "3. Permite la eliminación física, impidiéndola si el cliente tiene contratos o movimientos asociados."
     ]
   });
 
@@ -105,7 +108,7 @@ function generarPDF() {
     criterios: [
       "1. El sistema genera el contrato de forma automática usando ContratoFactory.",
       "2. Debe asegurar atomicidad en la base de datos (Transacción).",
-      "3. Modifica la vigencia de suscripción del cliente."
+      "3. Registra la vigencia del contrato (fecha de inicio y de fin) según la duración del plan."
     ]
   });
 

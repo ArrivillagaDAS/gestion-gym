@@ -10,7 +10,7 @@ Archivos:
 - `services/contrato-repository.js`
 - `services/seguimiento-repository.js`
 - `services/nutricion-repository.js`
-- `services/movimiento-repository.js`
+- `services/finanzas-repository.js`
 
 Ejemplo, en `contrato-repository.js`:
 

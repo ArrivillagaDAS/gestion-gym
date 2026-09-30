@@ -5,30 +5,12 @@ import { COMIDAS } from "../models/alimento-dia.js";
 import { ClienteService } from "../services/cliente-service.js";
 import { ContratoService } from "../services/contrato-service.js";
 import { NutricionService } from "../services/nutricion-service.js";
+import { formatearFecha } from "../utils/fechas.js";
+import { textoOpcional, numeroOpcional } from "../utils/entrada.js";
 
 const clientes = new ClienteService();
 const contratos = new ContratoService();
 const nutricion = new NutricionService();
-
-function formatearFecha(fecha) {
-  if (fecha instanceof Date) {
-    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-    const dia = String(fecha.getDate()).padStart(2, "0");
-    return `${fecha.getFullYear()}-${mes}-${dia}`;
-  }
-  return String(fecha);
-}
-
-// texto vacio se convierte en undefined para que el modelo lo trate como no enviado
-function textoOpcional(texto) {
-  const limpio = texto.trim();
-  return limpio === "" ? undefined : limpio;
-}
-
-function numeroOpcional(texto) {
-  const limpio = texto.trim().replace(",", ".");
-  return limpio === "" ? undefined : Number(limpio);
-}
 
 async function elegirCliente() {
   const listaClientes = await clientes.listarTodos();
