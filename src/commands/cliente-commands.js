@@ -1,9 +1,7 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
-import { ClienteService } from "../services/cliente-service.js";
+import { clienteService as service } from "../container.js";
 import { formatearFecha } from "../utils/fechas.js";
-
-const service = new ClienteService();
 
 // el usuario escribe solo los numeros (DDMMAAAA) y se le muestran con barras
 function mostrarFechaEscrita(valor) {

@@ -1,8 +1,10 @@
-import { pool } from "../config/database.js";
-
 export class NutricionRepository {
+  constructor(pool) {
+    this.pool = pool;
+  }
+
   // un plan esta vigente si no tiene fecha de fin o si esa fecha todavia no paso
-  async buscarVigente(contratoId, hoy, conexion = pool) {
+  async buscarVigente(contratoId, hoy, conexion = this.pool) {
     const [filas] = await conexion.query(
       `SELECT id FROM planes_alimentacion
        WHERE contrato_id = ? AND (fecha_fin IS NULL OR fecha_fin >= ?)`,
@@ -11,7 +13,7 @@ export class NutricionRepository {
     return filas[0] || null;
   }
 
-  async crearPlan(plan, conexion = pool) {
+  async crearPlan(plan, conexion = this.pool) {
     const [resultado] = await conexion.query(
       `INSERT INTO planes_alimentacion (contrato_id, nombre, fecha_inicio, fecha_fin)
        VALUES (?, ?, ?, ?)`,
@@ -23,7 +25,7 @@ export class NutricionRepository {
   // todos los planes de alimentacion de un cliente, del mas reciente al mas antiguo
   // trae el estado del contrato para saber en cuales se pueden registrar alimentos
   // las fechas salen como texto YYYY-MM-DD para evitar problemas de zona horaria
-  async listarPlanesPorCliente(clienteId, conexion = pool) {
+  async listarPlanesPorCliente(clienteId, conexion = this.pool) {
     const [filas] = await conexion.query(
       `SELECT pa.id, pa.contrato_id, pa.nombre,
               DATE_FORMAT(pa.fecha_inicio, '%Y-%m-%d') AS fecha_inicio,
@@ -39,7 +41,7 @@ export class NutricionRepository {
     return filas;
   }
 
-  async buscarPlanPorId(id, conexion = pool) {
+  async buscarPlanPorId(id, conexion = this.pool) {
     const [filas] = await conexion.query(
       `SELECT id, contrato_id,
               DATE_FORMAT(fecha_inicio, '%Y-%m-%d') AS fecha_inicio,
@@ -50,7 +52,7 @@ export class NutricionRepository {
     return filas[0] || null;
   }
 
-  async crearAlimento(alimento, conexion = pool) {
+  async crearAlimento(alimento, conexion = this.pool) {
     const [resultado] = await conexion.query(
       `INSERT INTO alimentos_dia (plan_alimentacion_id, fecha, comida, alimento, calorias)
        VALUES (?, ?, ?, ?, ?)`,
@@ -61,7 +63,7 @@ export class NutricionRepository {
 
   // todos los alimentos de un cliente entre dos fechas (incluidas), en orden cronologico
   // suma los planes de alimentacion de todos sus contratos, activos o no: es una consulta de lectura
-  async listarAlimentosPorRango(clienteId, desde, hasta, conexion = pool) {
+  async listarAlimentosPorRango(clienteId, desde, hasta, conexion = this.pool) {
     const [filas] = await conexion.query(
       `SELECT a.id, DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha, a.comida, a.alimento, a.calorias
        FROM alimentos_dia a

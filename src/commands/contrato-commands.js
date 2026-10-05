@@ -1,13 +1,7 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
-import { ClienteService } from "../services/cliente-service.js";
-import { PlanService } from "../services/plan-service.js";
-import { ContratoService } from "../services/contrato-service.js";
+import { clienteService as clientes, planService as planes, contratoService as contratos } from "../container.js";
 import { formatearFecha } from "../utils/fechas.js";
-
-const clientes = new ClienteService();
-const planes = new PlanService();
-const contratos = new ContratoService();
 
 async function asignarPlan() {
   const listaClientes = await clientes.listarTodos();

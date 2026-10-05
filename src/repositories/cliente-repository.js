@@ -1,8 +1,10 @@
-import { pool } from "../config/database.js";
-
 export class ClienteRepository {
+  constructor(pool) {
+    this.pool = pool;
+  }
+
   async crear(cliente) {
-    const [resultado] = await pool.query(
+    const [resultado] = await this.pool.query(
       `INSERT INTO clientes (nombre, apellido, email, telefono, fecha_nacimiento)
        VALUES (?, ?, ?, ?, ?)`,
       [
@@ -17,17 +19,17 @@ export class ClienteRepository {
   }
 
   async listarTodos() {
-    const [filas] = await pool.query("SELECT * FROM clientes ORDER BY id");
+    const [filas] = await this.pool.query("SELECT * FROM clientes ORDER BY id");
     return filas;
   }
 
   async buscarPorId(id) {
-    const [filas] = await pool.query("SELECT * FROM clientes WHERE id = ?", [id]);
+    const [filas] = await this.pool.query("SELECT * FROM clientes WHERE id = ?", [id]);
     return filas[0] || null;
   }
 
   async actualizar(id, cliente) {
-    await pool.query(
+    await this.pool.query(
       `UPDATE clientes SET nombre = ?, apellido = ?, email = ?, telefono = ?, fecha_nacimiento = ?
        WHERE id = ?`,
       [
@@ -42,6 +44,6 @@ export class ClienteRepository {
   }
 
   async eliminar(id) {
-    await pool.query("DELETE FROM clientes WHERE id = ?", [id]);
+    await this.pool.query("DELETE FROM clientes WHERE id = ?", [id]);
   }
 }

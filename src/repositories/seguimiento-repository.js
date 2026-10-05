@@ -1,7 +1,9 @@
-import { pool } from "../config/database.js";
-
 export class SeguimientoRepository {
-  async existeEnFecha(contratoId, fecha, conexion = pool) {
+  constructor(pool) {
+    this.pool = pool;
+  }
+
+  async existeEnFecha(contratoId, fecha, conexion = this.pool) {
     const [filas] = await conexion.query(
       "SELECT id FROM seguimientos WHERE contrato_id = ? AND fecha = ?",
       [contratoId, fecha]
@@ -9,7 +11,7 @@ export class SeguimientoRepository {
     return filas.length > 0;
   }
 
-  async crear(seguimiento, conexion = pool) {
+  async crear(seguimiento, conexion = this.pool) {
     const [resultado] = await conexion.query(
       `INSERT INTO seguimientos (contrato_id, fecha, peso, grasa_corporal, medidas, foto, comentarios)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -28,7 +30,7 @@ export class SeguimientoRepository {
 
   // todos los avances de un cliente, del mas antiguo al mas reciente
   // la fecha sale como texto YYYY-MM-DD para evitar problemas de zona horaria
-  async listarPorCliente(clienteId, conexion = pool) {
+  async listarPorCliente(clienteId, conexion = this.pool) {
     const [filas] = await conexion.query(
       `SELECT s.id, s.contrato_id, DATE_FORMAT(s.fecha, '%Y-%m-%d') AS fecha,
               s.peso, s.grasa_corporal, s.medidas, s.foto, s.comentarios,
@@ -43,7 +45,7 @@ export class SeguimientoRepository {
     return filas;
   }
 
-  async buscarPorId(id, conexion = pool) {
+  async buscarPorId(id, conexion = this.pool) {
     const [filas] = await conexion.query(
       "SELECT id, contrato_id FROM seguimientos WHERE id = ?",
       [id]
@@ -52,11 +54,28 @@ export class SeguimientoRepository {
   }
 
   // devuelve true si realmente se borro una fila
-  async eliminar(id, conexion = pool) {
+  async eliminar(id, conexion = this.pool) {
     const [resultado] = await conexion.query(
       "DELETE FROM seguimientos WHERE id = ?",
       [id]
     );
     return resultado.affectedRows > 0;
+  }
+
+  async contarPorContrato(contratoId, conexion = this.pool) {
+    const [filas] = await conexion.query(
+      "SELECT COUNT(*) AS total FROM seguimientos WHERE contrato_id = ?",
+      [contratoId]
+    );
+    return Number(filas[0].total);
+  }
+
+  // devuelve cuantos registros de seguimiento se borraron
+  async eliminarPorContrato(contratoId, conexion = this.pool) {
+    const [resultado] = await conexion.query(
+      "DELETE FROM seguimientos WHERE contrato_id = ?",
+      [contratoId]
+    );
+    return resultado.affectedRows;
   }
 }

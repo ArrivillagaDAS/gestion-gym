@@ -1,7 +1,9 @@
-import { pool } from "../config/database.js";
-
 export class FinanzasRepository {
-  async crear(movimiento, conexion = pool) {
+  constructor(pool) {
+    this.pool = pool;
+  }
+
+  async crear(movimiento, conexion = this.pool) {
     const [resultado] = await conexion.query(
       `INSERT INTO movimientos_financieros
         (cliente_id, tipo, categoria, descripcion, monto, fecha)
@@ -23,7 +25,7 @@ export class FinanzasRepository {
     desde,
     hasta,
     clienteId = null,
-    conexion = pool
+    conexion = this.pool
   ) {
     let sql = `
       SELECT
@@ -74,7 +76,7 @@ export class FinanzasRepository {
   async balancePorRango(
     desde,
     hasta,
-    conexion = pool
+    conexion = this.pool
   ) {
     const [filas] =
       await conexion.query(
@@ -117,7 +119,7 @@ export class FinanzasRepository {
     clienteId,
     desde,
     hasta,
-    conexion = pool
+    conexion = this.pool
   ) {
     const [filas] =
       await conexion.query(

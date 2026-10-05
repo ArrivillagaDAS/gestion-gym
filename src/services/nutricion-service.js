@@ -1,15 +1,13 @@
 import dayjs from "dayjs";
-import { pool } from "../config/database.js";
 import { fechaExiste } from "../utils/fechas.js";
 import { PlanAlimentacion } from "../models/plan-alimentacion.js";
 import { AlimentoDia } from "../models/alimento-dia.js";
-import { ContratoRepository } from "./contrato-repository.js";
-import { NutricionRepository } from "./nutricion-repository.js";
 
 export class NutricionService {
-  constructor() {
-    this.nutricion = new NutricionRepository();
-    this.contratos = new ContratoRepository();
+  constructor({ nutricion, contratos, ejecutarTransaccion }) {
+    this.nutricion = nutricion;
+    this.contratos = contratos;
+    this.ejecutarTransaccion = ejecutarTransaccion;
   }
 
   async crearPlan(datos) {
@@ -25,29 +23,22 @@ export class NutricionService {
       return { exito: false, errores };
     }
 
-    const conexion = await pool.getConnection();
-
-    try {
+    return this.ejecutarTransaccion(async (conexion) => {
       // accion critica: verificar el contrato y guardar el plan ocurren juntos o no ocurren
-      await conexion.beginTransaction();
-
       // el bloqueo evita que el contrato se cancele o finalice mientras se crea el plan
       // y evita que dos creaciones simultaneas dejen dos planes vigentes
       const contrato = await this.contratos.bloquearPorId(plan.contrato_id, conexion);
       if (!contrato) {
-        await conexion.rollback();
         return { exito: false, errores: ["El contrato no existe."] };
       }
 
       // regla de negocio: solo se crean planes de alimentacion en contratos activos
       if (contrato.estado !== "activo") {
-        await conexion.rollback();
         return { exito: false, errores: [`El contrato está ${contrato.estado}, no admite nuevos planes de alimentación.`] };
       }
 
       // el plan de alimentacion debe caber dentro de la vigencia del contrato
       if (plan.fecha_inicio > contrato.fecha_fin || (plan.fecha_fin !== undefined && plan.fecha_fin > contrato.fecha_fin)) {
-        await conexion.rollback();
         return {
           exito: false,
           errores: [`El plan de alimentación debe estar dentro de la vigencia del contrato (hasta ${contrato.fecha_fin}).`],
@@ -58,22 +49,13 @@ export class NutricionService {
       const hoy = dayjs().format("YYYY-MM-DD");
       const vigente = await this.nutricion.buscarVigente(plan.contrato_id, hoy, conexion);
       if (vigente) {
-        await conexion.rollback();
         return { exito: false, errores: ["El contrato ya tiene un plan de alimentación vigente."] };
       }
 
       const id = await this.nutricion.crearPlan(plan, conexion);
 
-      await conexion.commit();
       return { exito: true, id, plan };
-    } catch (error) {
-      // cualquier falla deshace todo lo hecho dentro de la transaccion
-      await conexion.rollback();
-      throw error;
-    } finally {
-      // la conexion siempre se devuelve al pool
-      conexion.release();
-    }
+    });
   }
 
   // solo lee, no modifica nada: no necesita transaccion
@@ -89,15 +71,10 @@ export class NutricionService {
       return { exito: false, errores: alimento.errores };
     }
 
-    const conexion = await pool.getConnection();
-
-    try {
+    return this.ejecutarTransaccion(async (conexion) => {
       // accion critica: verificar el contrato y guardar el alimento ocurren juntos o no ocurren
-      await conexion.beginTransaction();
-
       const plan = await this.nutricion.buscarPlanPorId(alimento.plan_alimentacion_id, conexion);
       if (!plan) {
-        await conexion.rollback();
         return { exito: false, errores: ["El plan de alimentación no existe."] };
       }
 
@@ -106,7 +83,6 @@ export class NutricionService {
 
       // regla de negocio: solo se registran alimentos en planes de contratos activos
       if (!contrato || contrato.estado !== "activo") {
-        await conexion.rollback();
         return {
           exito: false,
           errores: ["El plan pertenece a un contrato que no está activo: es historial y no admite nuevos alimentos."],
@@ -119,7 +95,6 @@ export class NutricionService {
         (plan.fecha_fin !== null && alimento.fecha > plan.fecha_fin) ||
         alimento.fecha > contrato.fecha_fin;
       if (fueraDelPlan) {
-        await conexion.rollback();
         const hasta = plan.fecha_fin !== null && plan.fecha_fin < contrato.fecha_fin ? plan.fecha_fin : contrato.fecha_fin;
         return {
           exito: false,
@@ -129,16 +104,8 @@ export class NutricionService {
 
       const id = await this.nutricion.crearAlimento(alimento, conexion);
 
-      await conexion.commit();
       return { exito: true, id, alimento };
-    } catch (error) {
-      // cualquier falla deshace todo lo hecho dentro de la transaccion
-      await conexion.rollback();
-      throw error;
-    } finally {
-      // la conexion siempre se devuelve al pool
-      conexion.release();
-    }
+    });
   }
 
   // solo lee, no modifica nada: no necesita transaccion

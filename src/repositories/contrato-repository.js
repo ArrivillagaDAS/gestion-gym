@@ -1,6 +1,8 @@
-import { pool } from "../config/database.js";
-
 export class ContratoRepository {
+  constructor(pool) {
+    this.pool = pool;
+  }
+
   async bloquearCliente(clienteId, conexion) {
     const [filas] = await conexion.query(
       "SELECT id FROM clientes WHERE id = ? FOR UPDATE",
@@ -34,7 +36,7 @@ export class ContratoRepository {
     return resultado.insertId;
   }
 
-  async listarPorCliente(clienteId, conexion = pool) {
+  async listarPorCliente(clienteId, conexion = this.pool) {
     const [filas] = await conexion.query(
       `SELECT c.id, c.condiciones, c.precio, c.fecha_inicio, c.fecha_fin, c.estado,
               p.nombre AS plan_nombre
@@ -60,28 +62,11 @@ export class ContratoRepository {
   }
 
   // cambia el estado solo si el contrato todavia esta en el estado esperado
-  async cambiarEstado(id, estadoNuevo, estadoEsperado, conexion = pool) {
+  async cambiarEstado(id, estadoNuevo, estadoEsperado, conexion = this.pool) {
     const [resultado] = await conexion.query(
       "UPDATE contratos SET estado = ? WHERE id = ? AND estado = ?",
       [estadoNuevo, id, estadoEsperado]
     );
     return resultado.affectedRows > 0;
-  }
-
-  async contarSeguimientos(contratoId, conexion = pool) {
-    const [filas] = await conexion.query(
-      "SELECT COUNT(*) AS total FROM seguimientos WHERE contrato_id = ?",
-      [contratoId]
-    );
-    return Number(filas[0].total);
-  }
-
-  // devuelve cuantos registros de seguimiento se borraron
-  async eliminarSeguimientos(contratoId, conexion = pool) {
-    const [resultado] = await conexion.query(
-      "DELETE FROM seguimientos WHERE contrato_id = ?",
-      [contratoId]
-    );
-    return resultado.affectedRows;
   }
 }

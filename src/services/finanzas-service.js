@@ -1,4 +1,3 @@
-import { pool } from "../config/database.js";
 import { fechaExiste } from "../utils/fechas.js";
 
 import {
@@ -7,9 +6,6 @@ import {
   CATEGORIAS_EGRESO,
 } from "../models/movimiento-financiero.js";
 
-import { FinanzasRepository } from "./finanzas-repository.js";
-import { ContratoRepository } from "./contrato-repository.js";
-import { ClienteRepository } from "./cliente-repository.js";
 
 function tieneMaximoDosDecimales(monto) {
   // monto * 100 puede dar 114.99999999999999 por punto flotante,
@@ -51,15 +47,11 @@ function validarRango(desde, hasta) {
 }
 
 export class FinanzasService {
-  constructor() {
-    this.finanzas =
-      new FinanzasRepository();
-
-    this.contratos =
-      new ContratoRepository();
-
-    this.clientes =
-      new ClienteRepository();
+  constructor({ finanzas, contratos, clientes, ejecutarTransaccion }) {
+    this.finanzas = finanzas;
+    this.contratos = contratos;
+    this.clientes = clientes;
+    this.ejecutarTransaccion = ejecutarTransaccion;
   }
 
   async registrar(datos) {
@@ -136,31 +128,19 @@ export class FinanzasService {
       };
     }
 
-    const conexion =
-      await pool.getConnection();
-
-    try {
-      await conexion.beginTransaction();
-
+    return this.ejecutarTransaccion(async (conexion) => {
       const id =
         await this.finanzas.crear(
           movimiento,
           conexion
         );
 
-      await conexion.commit();
-
       return {
         exito: true,
         id,
         movimiento,
       };
-    } catch (error) {
-      await conexion.rollback();
-      throw error;
-    } finally {
-      conexion.release();
-    }
+    });
   }
 
   async registrarPagoMensualidad(
@@ -192,12 +172,7 @@ export class FinanzasService {
       };
     }
 
-    const conexion =
-      await pool.getConnection();
-
-    try {
-      await conexion.beginTransaction();
-
+    return this.ejecutarTransaccion(async (conexion) => {
       const contrato =
         await this.contratos.bloquearPorId(
           contratoId,
@@ -205,7 +180,6 @@ export class FinanzasService {
         );
 
       if (!contrato) {
-        await conexion.rollback();
 
         return {
           exito: false,
@@ -218,7 +192,6 @@ export class FinanzasService {
       if (
         contrato.estado !== "activo"
       ) {
-        await conexion.rollback();
 
         return {
           exito: false,
@@ -231,7 +204,6 @@ export class FinanzasService {
       if (
         Number(contrato.precio) <= 0
       ) {
-        await conexion.rollback();
 
         return {
           exito: false,
@@ -265,7 +237,6 @@ export class FinanzasService {
         );
 
       if (modelo.errores.length > 0) {
-        await conexion.rollback();
 
         return {
           exito: false,
@@ -280,20 +251,13 @@ export class FinanzasService {
           conexion
         );
 
-      await conexion.commit();
-
       return {
         exito: true,
         id,
         movimiento,
         contrato,
       };
-    } catch (error) {
-      await conexion.rollback();
-      throw error;
-    } finally {
-      conexion.release();
-    }
+    });
   }
 
   async listarPorRango(

@@ -14,14 +14,18 @@ Aplicación de línea de comandos en Node.js para que un entrenador o gimnasio a
 ## Estructura del proyecto
 
 ```
-config/      conexion a la base de datos
-models/      clases con validaciones por campo
-services/    repositorios (SQL) y servicios (reglas de negocio y transacciones)
-commands/    menus e interaccion con el usuario
-utils/       funciones compartidas (fechas y lectura de datos escritos por el usuario)
-scripts/     utilidades, como la generacion del PDF de planeacion
-sql/         script de creacion de tablas
-docs/        documentacion adicional
+config/            conexion a la base de datos (pool)
+models/            clases con validaciones por campo
+repositories/      acceso a MySQL, el unico lugar donde se escribe SQL
+factories/         creacion de objetos (ContratoFactory)
+services/          reglas de negocio; reciben sus dependencias por constructor
+infraestructura/   ayudas tecnicas (manejo de transacciones)
+commands/          menus e interaccion con el usuario
+utils/             funciones compartidas (fechas y lectura de datos escritos por el usuario)
+scripts/           utilidades, como la generacion del PDF de planeacion
+sql/               script de creacion de tablas
+docs/              documentacion adicional
+container.js       arma repositorios y servicios (inyeccion de dependencias)
 ```
 
 ## Instalación
@@ -67,11 +71,11 @@ docs/        documentacion adicional
 
 ## Patrones de diseño
 
-Ver [`docs/patrones-diseno.md`](docs/patrones-diseno.md): Repository y Factory, además de los principios SOLID aplicados.
+Ver [`docs/patrones-diseno.md`](docs/patrones-diseno.md): Repository, Factory e inyección de dependencias, además de los principios SOLID aplicados.
 
 ## Transacciones
 
-Las operaciones críticas (asignar/renovar/cancelar un plan, registrar el pago de una mensualidad) usan transacciones reales de MySQL (`BEGIN`, `COMMIT`, `ROLLBACK`), para que no queden datos a medias si algo falla.
+Las operaciones críticas (asignar/renovar/cancelar un plan, registrar el pago de una mensualidad) usan transacciones reales de MySQL (`BEGIN`, `COMMIT`, `ROLLBACK`), para que no queden datos a medias si algo falla. Todas pasan por un solo helper, `infraestructura/transaccion.js`, que hace el `COMMIT` o el `ROLLBACK` y libera la conexión.
 
 ## Flujo de trabajo
 

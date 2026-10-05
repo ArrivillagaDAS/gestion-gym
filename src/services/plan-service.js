@@ -1,9 +1,8 @@
 import { Plan } from "../models/plan.js";
-import { PlanRepository } from "./plan-repository.js";
 
 export class PlanService {
-  constructor() {
-    this.repositorio = new PlanRepository();
+  constructor({ planes }) {
+    this.repositorio = planes;
   }
 
   async crear(datos) {

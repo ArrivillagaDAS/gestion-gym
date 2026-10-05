@@ -2,20 +2,9 @@ import inquirer from "inquirer";
 import chalk from "chalk";
 import dayjs from "dayjs";
 
-import { ClienteService } from "../services/cliente-service.js";
-import { ContratoService } from "../services/contrato-service.js";
-import { FinanzasService } from "../services/finanzas-service.js";
+import { clienteService as clientes, contratoService as contratos, finanzasService as finanzas } from "../container.js";
 import { formatearFecha } from "../utils/fechas.js";
 import { numeroOpcional } from "../utils/entrada.js";
-
-const clientes =
-  new ClienteService();
-
-const contratos =
-  new ContratoService();
-
-const finanzas =
-  new FinanzasService();
 
 function formatearMonto(monto) {
   return `Q ${Number(monto).toFixed(2)}`;

@@ -1,15 +1,9 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
 import dayjs from "dayjs";
-import { ClienteService } from "../services/cliente-service.js";
-import { ContratoService } from "../services/contrato-service.js";
-import { SeguimientoService } from "../services/seguimiento-service.js";
+import { clienteService as clientes, contratoService as contratos, seguimientoService as seguimientos } from "../container.js";
 import { formatearFecha } from "../utils/fechas.js";
 import { textoOpcional, numeroOpcional } from "../utils/entrada.js";
-
-const clientes = new ClienteService();
-const contratos = new ContratoService();
-const seguimientos = new SeguimientoService();
 
 function formatearVariacion(valor) {
   return `${valor > 0 ? "+" : ""}${valor.toFixed(2)}`;

@@ -1,12 +1,11 @@
-import { pool } from "../config/database.js";
-import { ContratoFactory } from "./contrato-factory.js";
-import { ContratoRepository } from "./contrato-repository.js";
-import { PlanRepository } from "./plan-repository.js";
+import { ContratoFactory } from "../factories/contrato-factory.js";
 
 export class ContratoService {
-  constructor() {
-    this.contratos = new ContratoRepository();
-    this.planes = new PlanRepository();
+  constructor({ contratos, planes, seguimientos, ejecutarTransaccion }) {
+    this.contratos = contratos;
+    this.planes = planes;
+    this.seguimientos = seguimientos;
+    this.ejecutarTransaccion = ejecutarTransaccion;
   }
 
   async asignarPlan(clienteId, planId, opciones = {}) {
@@ -21,22 +20,16 @@ export class ContratoService {
       return { exito: false, errores: contrato.errores };
     }
 
-    const conexion = await pool.getConnection();
-
-    try {
-      // accion critica: verificar y crear el contrato ocurren juntos o no ocurren
-      await conexion.beginTransaction();
-
+    // accion critica: verificar y crear el contrato ocurren juntos o no ocurren
+    return this.ejecutarTransaccion(async (conexion) => {
       // el bloqueo evita que dos asignaciones del mismo cliente se crucen
       const existe = await this.contratos.bloquearCliente(clienteId, conexion);
       if (!existe) {
-        await conexion.rollback();
         return { exito: false, errores: ["El cliente no existe."] };
       }
 
       const activo = await this.contratos.buscarActivo(clienteId, planId, conexion);
       if (activo) {
-        await conexion.rollback();
         return {
           exito: false,
           errores: ["El cliente ya tiene un contrato activo con este plan."],
@@ -44,17 +37,8 @@ export class ContratoService {
       }
 
       const id = await this.contratos.crear(contrato, conexion);
-
-      await conexion.commit();
       return { exito: true, id, contrato };
-    } catch (error) {
-      // cualquier falla deshace todo lo hecho dentro de la transaccion
-      await conexion.rollback();
-      throw error;
-    } finally {
-      // la conexion siempre se devuelve al pool
-      conexion.release();
-    }
+    });
   }
 
   async listarPorCliente(clienteId) {
@@ -62,32 +46,25 @@ export class ContratoService {
   }
 
   async contarSeguimientos(contratoId) {
-    return this.contratos.contarSeguimientos(contratoId);
+    return this.seguimientos.contarPorContrato(contratoId);
   }
 
   async renovar(contratoId) {
-    const conexion = await pool.getConnection();
-
-    try {
-      // accion critica: cerrar el contrato viejo y crear el nuevo ocurren juntos o no ocurren
-      await conexion.beginTransaction();
-
+    // accion critica: cerrar el contrato viejo y crear el nuevo ocurren juntos o no ocurren
+    return this.ejecutarTransaccion(async (conexion) => {
       // el bloqueo evita que dos renovaciones del mismo contrato se crucen
       const actual = await this.contratos.bloquearPorId(contratoId, conexion);
       if (!actual) {
-        await conexion.rollback();
         return { exito: false, errores: ["El contrato no existe."] };
       }
 
       // regla de negocio: solo se renueva un contrato activo
       if (actual.estado !== "activo") {
-        await conexion.rollback();
         return { exito: false, errores: [`El contrato está ${actual.estado}, no se puede renovar.`] };
       }
 
       const plan = await this.planes.buscarPorId(actual.plan_id);
       if (!plan) {
-        await conexion.rollback();
         return { exito: false, errores: ["El plan del contrato ya no existe."] };
       }
 
@@ -97,69 +74,43 @@ export class ContratoService {
         condiciones: `Renovación del contrato #${actual.id} (plan "${plan.nombre}", ${plan.duracion_semanas} semanas).`,
       });
       if (!nuevo.esValido()) {
-        await conexion.rollback();
         return { exito: false, errores: nuevo.errores };
       }
 
       // primero se cierra el viejo, para que no choque con la regla de contrato activo repetido
       const cerrado = await this.contratos.cambiarEstado(actual.id, "finalizado", "activo", conexion);
       if (!cerrado) {
-        await conexion.rollback();
         return { exito: false, errores: ["El contrato cambió de estado, intenta de nuevo."] };
       }
 
       const id = await this.contratos.crear(nuevo, conexion);
-
-      await conexion.commit();
       return { exito: true, id, contrato: nuevo };
-    } catch (error) {
-      // cualquier falla deshace todo lo hecho dentro de la transaccion
-      await conexion.rollback();
-      throw error;
-    } finally {
-      // la conexion siempre se devuelve al pool
-      conexion.release();
-    }
+    });
   }
 
   async cancelar(contratoId) {
-    const conexion = await pool.getConnection();
-
-    try {
-      // accion critica: borrar el seguimiento y cancelar el contrato ocurren juntos o no ocurren
-      await conexion.beginTransaction();
-
+    // accion critica: borrar el seguimiento y cancelar el contrato ocurren juntos o no ocurren
+    return this.ejecutarTransaccion(async (conexion) => {
       // el bloqueo evita que el contrato cambie de estado mientras se cancela
       const actual = await this.contratos.bloquearPorId(contratoId, conexion);
       if (!actual) {
-        await conexion.rollback();
         return { exito: false, errores: ["El contrato no existe."] };
       }
 
       // regla de negocio: solo se cancela un contrato activo
       if (actual.estado !== "activo") {
-        await conexion.rollback();
         return { exito: false, errores: [`El contrato está ${actual.estado}, no se puede cancelar.`] };
       }
 
-      const eliminados = await this.contratos.eliminarSeguimientos(actual.id, conexion);
+      const eliminados = await this.seguimientos.eliminarPorContrato(actual.id, conexion);
 
       const cancelado = await this.contratos.cambiarEstado(actual.id, "cancelado", "activo", conexion);
       if (!cancelado) {
-        await conexion.rollback();
         return { exito: false, errores: ["El contrato cambió de estado, intenta de nuevo."] };
       }
 
-      await conexion.commit();
       return { exito: true, seguimientosEliminados: eliminados };
-    } catch (error) {
-      // cualquier falla deshace todo: el contrato sigue activo y el seguimiento intacto
-      await conexion.rollback();
-      throw error;
-    } finally {
-      // la conexion siempre se devuelve al pool
-      conexion.release();
-    }
+    });
   }
 
   async finalizar(contratoId) {

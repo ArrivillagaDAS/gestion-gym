@@ -1,13 +1,11 @@
 import dayjs from "dayjs";
-import { pool } from "../config/database.js";
 import { Seguimiento } from "../models/seguimiento.js";
-import { ContratoRepository } from "./contrato-repository.js";
-import { SeguimientoRepository } from "./seguimiento-repository.js";
 
 export class SeguimientoService {
-  constructor() {
-    this.seguimientos = new SeguimientoRepository();
-    this.contratos = new ContratoRepository();
+  constructor({ seguimientos, contratos, ejecutarTransaccion }) {
+    this.seguimientos = seguimientos;
+    this.contratos = contratos;
+    this.ejecutarTransaccion = ejecutarTransaccion;
   }
 
   async registrar(datos) {
@@ -32,43 +30,28 @@ export class SeguimientoService {
       return { exito: false, errores };
     }
 
-    const conexion = await pool.getConnection();
-
-    try {
+    return this.ejecutarTransaccion(async (conexion) => {
       // accion critica: verificar el contrato y guardar el avance ocurren juntos o no ocurren
-      await conexion.beginTransaction();
-
       // el bloqueo evita que el contrato se cancele o finalice mientras se registra el avance
       const contrato = await this.contratos.bloquearPorId(seguimiento.contrato_id, conexion);
       if (!contrato) {
-        await conexion.rollback();
         return { exito: false, errores: ["El contrato no existe."] };
       }
 
       // regla de negocio: solo se registran avances en contratos activos
       if (contrato.estado !== "activo") {
-        await conexion.rollback();
         return { exito: false, errores: [`El contrato está ${contrato.estado}, no admite nuevos avances.`] };
       }
 
       const repetido = await this.seguimientos.existeEnFecha(seguimiento.contrato_id, seguimiento.fecha, conexion);
       if (repetido) {
-        await conexion.rollback();
         return { exito: false, errores: ["Ya existe un avance de este contrato en esa fecha."] };
       }
 
       const id = await this.seguimientos.crear(seguimiento, conexion);
 
-      await conexion.commit();
       return { exito: true, id, seguimiento };
-    } catch (error) {
-      // cualquier falla deshace todo lo hecho dentro de la transaccion
-      await conexion.rollback();
-      throw error;
-    } finally {
-      // la conexion siempre se devuelve al pool
-      conexion.release();
-    }
+    });
   }
 
   // solo lee, no modifica nada: no necesita transaccion
@@ -94,15 +77,10 @@ export class SeguimientoService {
   }
 
   async eliminar(seguimientoId) {
-    const conexion = await pool.getConnection();
-
-    try {
+    return this.ejecutarTransaccion(async (conexion) => {
       // accion critica: verificar el estado del contrato y borrar el avance ocurren juntos o no ocurren
-      await conexion.beginTransaction();
-
       const registro = await this.seguimientos.buscarPorId(seguimientoId, conexion);
       if (!registro) {
-        await conexion.rollback();
         return { exito: false, errores: ["El registro de avance no existe."] };
       }
 
@@ -111,7 +89,6 @@ export class SeguimientoService {
 
       // regla de consistencia: el seguimiento de un contrato cerrado es historial y no se toca
       if (!contrato || contrato.estado !== "activo") {
-        await conexion.rollback();
         return {
           exito: false,
           errores: ["El registro pertenece a un contrato que no está activo: es historial y no se puede eliminar."],
@@ -120,19 +97,10 @@ export class SeguimientoService {
 
       const eliminado = await this.seguimientos.eliminar(seguimientoId, conexion);
       if (!eliminado) {
-        await conexion.rollback();
         return { exito: false, errores: ["El registro ya no existe."] };
       }
 
-      await conexion.commit();
       return { exito: true };
-    } catch (error) {
-      // cualquier falla deshace todo: el avance sigue en su lugar
-      await conexion.rollback();
-      throw error;
-    } finally {
-      // la conexion siempre se devuelve al pool
-      conexion.release();
-    }
+    });
   }
 }

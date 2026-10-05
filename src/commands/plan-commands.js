@@ -1,8 +1,6 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
-import { PlanService } from "../services/plan-service.js";
-
-const service = new PlanService();
+import { planService as service } from "../container.js";
 
 async function crearPlan() {
   const datos = await inquirer.prompt([

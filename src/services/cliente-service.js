@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import { Cliente } from "../models/cliente.js";
-import { ClienteRepository } from "./cliente-repository.js";
 
 // reglas que el modelo no puede revisar solo con el esquema
 function validarReglasDeNegocio(cliente) {
@@ -14,8 +13,8 @@ function validarReglasDeNegocio(cliente) {
 }
 
 export class ClienteService {
-  constructor() {
-    this.repositorio = new ClienteRepository();
+  constructor({ clientes }) {
+    this.repositorio = clientes;
   }
 
   async crear(datos) {

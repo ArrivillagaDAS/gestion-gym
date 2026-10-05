@@ -1,8 +1,10 @@
-import { pool } from "../config/database.js";
-
 export class PlanRepository {
+  constructor(pool) {
+    this.pool = pool;
+  }
+
   async crear(plan) {
-    const [resultado] = await pool.query(
+    const [resultado] = await this.pool.query(
       `INSERT INTO planes (nombre, duracion_semanas, metas_fisicas, nivel, precio)
        VALUES (?, ?, ?, ?, ?)`,
       [plan.nombre, plan.duracion_semanas, plan.metas_fisicas ?? null, plan.nivel, plan.precio]
@@ -11,12 +13,12 @@ export class PlanRepository {
   }
 
   async listarTodos() {
-    const [filas] = await pool.query("SELECT * FROM planes ORDER BY id");
+    const [filas] = await this.pool.query("SELECT * FROM planes ORDER BY id");
     return filas;
   }
 
   async buscarPorId(id) {
-    const [filas] = await pool.query("SELECT * FROM planes WHERE id = ?", [id]);
+    const [filas] = await this.pool.query("SELECT * FROM planes WHERE id = ?", [id]);
     return filas[0] || null;
   }
 }

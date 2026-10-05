@@ -2,15 +2,9 @@ import inquirer from "inquirer";
 import chalk from "chalk";
 import dayjs from "dayjs";
 import { COMIDAS } from "../models/alimento-dia.js";
-import { ClienteService } from "../services/cliente-service.js";
-import { ContratoService } from "../services/contrato-service.js";
-import { NutricionService } from "../services/nutricion-service.js";
+import { clienteService as clientes, contratoService as contratos, nutricionService as nutricion } from "../container.js";
 import { formatearFecha } from "../utils/fechas.js";
 import { textoOpcional, numeroOpcional } from "../utils/entrada.js";
-
-const clientes = new ClienteService();
-const contratos = new ContratoService();
-const nutricion = new NutricionService();
 
 async function elegirCliente() {
   const listaClientes = await clientes.listarTodos();
