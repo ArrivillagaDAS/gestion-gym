@@ -95,3 +95,18 @@ CREATE TABLE movimientos_financieros (
   FOREIGN KEY (cliente_id) REFERENCES clientes(id),
   INDEX idx_movimientos_financieros_fecha (fecha)
 );
+
+-- Tabla de asistencias en MySQL
+CREATE TABLE IF NOT EXISTS attendances (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT NOT NULL,
+    plan_id INT NOT NULL,
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    session_type ENUM('grupo', 'individual') NOT NULL,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE,
+    FOREIGN KEY (plan_id) REFERENCES planes(id) ON DELETE CASCADE,
+    INDEX idx_cliente (cliente_id),
+    INDEX idx_date (fecha)
+);
