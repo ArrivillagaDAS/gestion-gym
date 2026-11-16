@@ -1,0 +1,74 @@
+/* estilos propios de cada vista */
+
+/* filtros en forma de pastilla */
+.filtro-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.chip {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--superficie);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transicion), border-color var(--transicion);
+}
+
+.chip:hover {
+  border-color: var(--tinta);
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--tinta);
+  background: var(--tinta);
+  color: var(--lima);
+}
+
+/* planes */
+.rejilla.tarjetas {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: transform var(--transicion), box-shadow var(--transicion);
+}
+
+.plan:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(20, 22, 28, 0.06), 0 14px 30px rgba(20, 22, 28, 0.1);
+}
+
+.plan-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.plan h3 {
+  font-size: 1.2rem;
+}
+
+.plan-precio {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--borde);
+  font-family: var(--fuente-titulo);
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.plan-precio span {
+  color: var(--texto-suave);
+  font-family: var(--fuente-texto);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
