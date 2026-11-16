@@ -44,7 +44,7 @@ Se usa en `contrato-service.js`, en `asignarPlan()` y en `renovar()`.
 
 ## 3. Inyección de dependencias
 
-Ninguna clase crea sus dependencias con `new` por dentro: las recibe por el constructor. Los únicos `new` de repositorios y servicios están en `container.js`.
+Ninguna clase crea sus dependencias con `new` por dentro: las recibe por el constructor. Los únicos `new` de repositorios y servicios están en `src/container.js`.
 
 ```javascript
 export class ContratoService {
@@ -57,7 +57,7 @@ export class ContratoService {
 }
 ```
 
-Las transacciones también se inyectan: los servicios llaman a `ejecutarTransaccion`, que viene de `infraestructura/transaccion.js`, y no tocan el `pool` directamente.
+Las transacciones también se inyectan: los servicios llaman a `ejecutarTransaccion`, que viene de `src/infraestructura/transaccion.js`, y no tocan el `pool` directamente.
 
 ## Principios SOLID aplicados
 
