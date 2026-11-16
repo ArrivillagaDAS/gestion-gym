@@ -4,12 +4,14 @@ import { pool } from "../config/database.js";
 import { clienteService, planService } from "../container.js";
 import { Enrutador } from "./enrutador.js";
 import { enviarJson } from "./http.js";
+import { crearCatalogoController } from "./controladores/catalogo-controller.js";
 import { crearClienteController } from "./controladores/cliente-controller.js";
 import { crearPlanController } from "./controladores/plan-controller.js";
 
 export function crearRutas() {
   const rutas = new Enrutador();
 
+  const catalogo = crearCatalogoController();
   const clientes = crearClienteController({ clienteService });
   const planes = crearPlanController({ planService });
 
@@ -31,6 +33,7 @@ export function crearRutas() {
     .post("/api/planes", planes.crear)
     .get("/api/planes/:id", planes.obtener);
 
+  rutas.get("/api/catalogos", catalogo.obtener);
 
   return rutas;
 }
