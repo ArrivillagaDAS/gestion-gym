@@ -72,3 +72,63 @@
   font-size: 0.82rem;
   font-weight: 500;
 }
+
+/* indicadores en fila */
+.rejilla.indicadores {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.nota {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radio-chico);
+  background: var(--aviso-fondo);
+  color: var(--aviso);
+  font-size: 0.92rem;
+}
+
+.nota a {
+  font-weight: 700;
+}
+
+/* graficos */
+.grafico {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.grafico .guia {
+  stroke: var(--borde);
+  stroke-dasharray: 3 4;
+}
+
+.grafico .eje {
+  fill: var(--texto-suave);
+  font-size: 11px;
+  font-family: var(--fuente-texto);
+}
+
+.grafico .area {
+  fill: var(--lima);
+  opacity: 0.22;
+}
+
+.grafico .linea {
+  fill: none;
+  stroke: var(--tinta);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.grafico .punto {
+  fill: var(--lima);
+  stroke: var(--tinta);
+  stroke-width: 2;
+}
+
+/* indicadores con texto largo, como fechas */
+.indicador .valor.chico {
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
