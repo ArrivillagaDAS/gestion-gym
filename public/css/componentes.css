@@ -198,13 +198,14 @@
   color: var(--lima);
 }
 
-/* tablas: en movil cada fila se vuelve una tarjeta con etiquetas */
+/* tablas: cuando su contenedor es angosto cada fila se vuelve una tarjeta con etiquetas */
 .tabla-contenedor {
+  container-type: inline-size;
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--superficie);
   box-shadow: var(--sombra);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .tabla {
@@ -238,12 +239,18 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tabla .acciones {
-  justify-content: flex-end;
-  flex-wrap: nowrap;
+/* la celda sigue siendo celda de tabla; los botones van en linea a la derecha */
+.tabla td.acciones {
+  display: table-cell;
+  text-align: right;
+  white-space: nowrap;
 }
 
-@media (max-width: 720px) {
+.tabla td.acciones .boton + .boton {
+  margin-left: 0.4rem;
+}
+
+@container (max-width: 760px) {
   .tabla thead {
     display: none;
   }
@@ -277,8 +284,16 @@
   }
 
   .tabla td.acciones {
+    display: flex;
+    flex-wrap: wrap;
     justify-content: flex-start;
+    gap: 0.4rem;
     margin-top: 0.4rem;
+    white-space: normal;
+  }
+
+  .tabla td.acciones .boton + .boton {
+    margin-left: 0;
   }
 
   .tabla td.acciones::before {
@@ -398,6 +413,8 @@ textarea.control {
 
 /* dialogo modal */
 .dialogo {
+  /* el reset quita el margin auto que centra al dialog nativo */
+  margin: auto;
   width: min(560px, calc(100% - 2rem));
   max-height: calc(100vh - 2rem);
   padding: 0;
