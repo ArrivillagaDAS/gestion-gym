@@ -1,0 +1,506 @@
+/* componentes reutilizables por todas las vistas */
+
+/* encabezado de cada vista: descripcion a la izquierda, acciones a la derecha */
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.cabecera p {
+  max-width: 46rem;
+  color: var(--texto-suave);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* botones */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radio-chico);
+  background: var(--tinta);
+  color: var(--texto-invertido);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--transicion), background var(--transicion), border-color var(--transicion);
+}
+
+.boton:hover {
+  background: var(--tinta-3);
+}
+
+.boton:active {
+  transform: translateY(1px);
+}
+
+.boton svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.boton.acento {
+  background: var(--lima);
+  color: var(--tinta);
+}
+
+.boton.acento:hover {
+  background: #b9e31f;
+}
+
+.boton.secundario {
+  background: var(--superficie);
+  color: var(--texto);
+  border-color: var(--borde);
+}
+
+.boton.secundario:hover {
+  border-color: var(--tinta);
+}
+
+.boton.peligro {
+  background: var(--peligro);
+  color: #fff;
+}
+
+.boton.chico {
+  min-height: 2rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.boton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* tarjetas */
+.tarjeta {
+  padding: 1.25rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+}
+
+.tarjeta > h2,
+.tarjeta > h3 {
+  margin-bottom: 0.75rem;
+  font-size: 1.05rem;
+}
+
+.rejilla {
+  display: grid;
+  gap: 1rem;
+}
+
+.pila {
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* indicadores numericos */
+.indicador {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.indicador .etiqueta {
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.indicador .valor {
+  font-family: var(--fuente-titulo);
+  font-size: clamp(1.4rem, 1.1rem + 0.8vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  /* un monto largo baja de linea en vez de salirse de la tarjeta */
+  overflow-wrap: anywhere;
+}
+
+.indicador.destacado {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--texto-invertido);
+}
+
+.indicador.destacado .etiqueta {
+  color: #b9bcc8;
+}
+
+.indicador.destacado .valor {
+  color: var(--lima);
+}
+
+.positivo {
+  color: var(--exito);
+}
+
+.negativo {
+  color: var(--peligro);
+}
+
+/* etiquetas de estado */
+.etiqueta-estado {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--neutro-fondo);
+  color: var(--texto-suave);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.etiqueta-estado.activo,
+.etiqueta-estado.ingreso {
+  background: var(--exito-fondo);
+  color: var(--exito);
+}
+
+.etiqueta-estado.cancelado,
+.etiqueta-estado.egreso {
+  background: var(--peligro-fondo);
+  color: var(--peligro);
+}
+
+.etiqueta-estado.principiante {
+  background: var(--lima-suave);
+  color: #4d6300;
+}
+
+.etiqueta-estado.intermedio {
+  background: var(--aviso-fondo);
+  color: var(--aviso);
+}
+
+.etiqueta-estado.avanzado {
+  background: var(--tinta);
+  color: var(--lima);
+}
+
+/* tablas: cuando su contenedor es angosto cada fila se vuelve una tarjeta con etiquetas */
+.tabla-contenedor {
+  container-type: inline-size;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+  overflow-x: auto;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla th {
+  padding: 0.75rem 1rem;
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tabla td {
+  padding: 0.8rem 1rem;
+  border-top: 1px solid var(--borde);
+  vertical-align: middle;
+}
+
+.tabla tr:hover td {
+  background: #fbfaf7;
+}
+
+.tabla .numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* la celda sigue siendo celda de tabla; los botones van en linea a la derecha */
+.tabla td.acciones {
+  display: table-cell;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tabla td.acciones .boton + .boton {
+  margin-left: 0.4rem;
+}
+
+@container (max-width: 760px) {
+  .tabla thead {
+    display: none;
+  }
+
+  .tabla tr {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+    border-top: 1px solid var(--borde);
+  }
+
+  .tabla tr:first-child {
+    border-top: 0;
+  }
+
+  .tabla td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .tabla td::before {
+    content: attr(data-etiqueta);
+    color: var(--texto-suave);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .tabla td.acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    white-space: normal;
+  }
+
+  .tabla td.acciones .boton + .boton {
+    margin-left: 0;
+  }
+
+  .tabla td.acciones::before {
+    content: none;
+  }
+}
+
+/* formularios */
+.formulario {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.campos {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.campo {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.campo label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.campo .ayuda {
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+.control {
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  background: var(--superficie);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.control:focus {
+  outline: none;
+  border-color: var(--tinta);
+  box-shadow: 0 0 0 3px rgba(200, 240, 49, 0.55);
+}
+
+textarea.control {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.errores {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radio-chico);
+  background: var(--peligro-fondo);
+  color: var(--peligro);
+  font-size: 0.9rem;
+}
+
+.errores li + li {
+  margin-top: 0.2rem;
+}
+
+.barra-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.barra-filtros .campo {
+  min-width: 12rem;
+  flex: 1 1 12rem;
+}
+
+.barra-filtros .campo.ancho {
+  flex-basis: 18rem;
+}
+
+@media (min-width: 640px) {
+  .campos.dos {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .campos .completo {
+    grid-column: 1 / -1;
+  }
+}
+
+/* estados vacios y de carga */
+.vacio {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  border: 1.5px dashed var(--borde);
+  border-radius: var(--radio);
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+.vacio strong {
+  color: var(--texto);
+  font-family: var(--fuente-titulo);
+  font-size: 1.05rem;
+}
+
+.cargando {
+  padding: 2rem 0;
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+/* dialogo modal */
+.dialogo {
+  /* el reset quita el margin auto que centra al dialog nativo */
+  margin: auto;
+  width: min(560px, calc(100% - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: var(--sombra-alta);
+}
+
+.dialogo::backdrop {
+  background: rgba(20, 22, 28, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.dialogo-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--borde);
+}
+
+.dialogo-cabecera h2 {
+  font-size: 1.15rem;
+}
+
+.dialogo-cuerpo {
+  padding: 1.25rem;
+}
+
+.dialogo-pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.cerrar {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cerrar:hover {
+  background: var(--superficie-2);
+}
+
+/* avisos flotantes */
+.avisos {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  display: grid;
+  gap: 0.5rem;
+  width: min(360px, calc(100% - 2rem));
+}
+
+.aviso {
+  padding: 0.8rem 1rem;
+  border-left: 4px solid var(--lima);
+  border-radius: var(--radio-chico);
+  background: var(--tinta);
+  color: var(--texto-invertido);
+  box-shadow: var(--sombra-alta);
+  animation: entrar 0.25s ease;
+}
+
+.aviso.error {
+  border-left-color: #ff6b5e;
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
