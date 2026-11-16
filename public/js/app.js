@@ -63,6 +63,10 @@ function abrirMenu(abrir) {
 }
 
 botonMenu.addEventListener("click", () => abrirMenu(!barra.classList.contains("abierta")));
+// en movil, tocar fuera del menu lo cierra
+document.addEventListener("click", (e) => {
+  if (barra.classList.contains("abierta") && !barra.contains(e.target) && !botonMenu.contains(e.target)) abrirMenu(false);
+});
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") abrirMenu(false);
 });
