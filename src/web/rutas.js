@@ -7,6 +7,7 @@ import {
   contratoService,
   seguimientoService,
   nutricionService,
+  finanzasService,
 } from "../container.js";
 import { Enrutador } from "./enrutador.js";
 import { enviarJson } from "./http.js";
@@ -16,6 +17,7 @@ import { crearPlanController } from "./controladores/plan-controller.js";
 import { crearContratoController } from "./controladores/contrato-controller.js";
 import { crearSeguimientoController } from "./controladores/seguimiento-controller.js";
 import { crearNutricionController } from "./controladores/nutricion-controller.js";
+import { crearFinanzasController } from "./controladores/finanzas-controller.js";
 
 export function crearRutas() {
   const rutas = new Enrutador();
@@ -26,6 +28,7 @@ export function crearRutas() {
   const contratos = crearContratoController({ contratoService });
   const seguimientos = crearSeguimientoController({ seguimientoService });
   const nutricion = crearNutricionController({ nutricionService });
+  const finanzas = crearFinanzasController({ finanzasService });
 
   // permite saber desde el navegador si el servidor y la base de datos responden
   rutas.get("/api/salud", async ({ res }) => {
@@ -63,6 +66,13 @@ export function crearRutas() {
     .get("/api/clientes/:id/reporte-nutricional", nutricion.reporteSemanal)
     .post("/api/planes-alimentacion", nutricion.crearPlan)
     .post("/api/alimentos", nutricion.registrarAlimento);
+
+  rutas
+    .get("/api/movimientos", finanzas.listar)
+    .post("/api/movimientos", finanzas.registrar)
+    .post("/api/contratos/:id/pagos", finanzas.pagarMensualidad)
+    .get("/api/balance", finanzas.balance)
+    .get("/api/clientes/:id/balance", finanzas.balancePorCliente);
 
   rutas.get("/api/catalogos", catalogo.obtener);
 
