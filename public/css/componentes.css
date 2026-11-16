@@ -131,9 +131,11 @@
 
 .indicador .valor {
   font-family: var(--fuente-titulo);
-  font-size: 1.9rem;
+  font-size: clamp(1.4rem, 1.1rem + 0.8vw, 1.9rem);
   font-weight: 800;
   letter-spacing: -0.02em;
+  /* un monto largo baja de linea en vez de salirse de la tarjeta */
+  overflow-wrap: anywhere;
 }
 
 .indicador.destacado {

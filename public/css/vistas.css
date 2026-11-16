@@ -73,9 +73,35 @@
   font-weight: 500;
 }
 
-/* indicadores en fila */
-.rejilla.indicadores {
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+/* indicadores y accesos: 1 columna en movil, 2 en tablet y todos en fila en pantallas anchas */
+.rejilla.indicadores,
+.rejilla.accesos {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+  .rejilla.indicadores,
+  .rejilla.accesos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* si queda uno solo en la ultima fila, ocupa todo el ancho */
+  .rejilla.indicadores > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1180px) {
+  .rejilla.indicadores,
+  .rejilla.accesos {
+    grid-template-columns: none;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+  }
+
+  .rejilla.indicadores > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
 }
 
 .nota {
@@ -251,4 +277,107 @@
   font-size: 0.95rem;
   font-weight: 600;
   opacity: 0.75;
+}
+
+/* inicio */
+.bienvenida {
+  display: grid;
+  gap: 0.6rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: calc(var(--radio) + 4px);
+  background:
+    radial-gradient(28rem 14rem at 100% 0%, rgba(200, 240, 49, 0.28), transparent 70%),
+    var(--tinta);
+  color: var(--texto-invertido);
+}
+
+.bienvenida h2 {
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.2rem);
+  font-weight: 800;
+}
+
+.bienvenida-fecha {
+  color: var(--lima);
+  font-weight: 700;
+}
+
+.bienvenida > p {
+  max-width: 40rem;
+  color: #c9cbd4;
+}
+
+.acceso {
+  position: relative;
+  display: grid;
+  gap: 0.25rem;
+  padding-right: 2.5rem;
+  text-decoration: none;
+  transition: border-color var(--transicion), transform var(--transicion);
+}
+
+.acceso:hover {
+  border-color: var(--tinta);
+  transform: translateY(-2px);
+}
+
+.acceso .flecha {
+  position: absolute;
+  right: 1.1rem;
+  top: 1.1rem;
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: var(--lima);
+  color: var(--tinta);
+  font-weight: 800;
+}
+
+@media (min-width: 900px) {
+  .rejilla.dos-columnas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.lista-simple li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--borde);
+}
+
+.lista-simple li:first-child {
+  border-top: 0;
+}
+
+.lista-simple li > div {
+  display: grid;
+  min-width: 0;
+}
+
+.lista-simple li > div strong,
+.lista-simple li > div span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lista-simple li > span {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.enlace {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.enlace:hover {
+  text-decoration: underline;
 }
