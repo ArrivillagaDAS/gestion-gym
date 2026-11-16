@@ -55,3 +55,40 @@ export function lineas(puntos, { unidad = "", descripcion = "Gráfico de evoluci
 
   return raiz;
 }
+
+// barras verticales en HTML: [{ etiqueta, valor, detalle }]
+// cada barra lleva su valor escrito, asi el grafico se entiende sin colores ni tooltip
+export function barras(datos, { unidad = "", descripcion = "Gráfico de barras" } = {}) {
+  const maximo = Math.max(...datos.map((d) => d.valor), 1);
+
+  const raiz = document.createElement("div");
+  raiz.className = "barras";
+  raiz.setAttribute("role", "img");
+  raiz.setAttribute("aria-label", descripcion);
+
+  for (const dato of datos) {
+    const columna = document.createElement("div");
+    columna.className = `barra-columna${dato.valor === 0 ? " vacia" : ""}`;
+    columna.title = dato.detalle || `${dato.etiqueta}: ${dato.valor}${unidad}`;
+
+    const valor = document.createElement("span");
+    valor.className = "barra-valor";
+    valor.textContent = dato.valor === 0 ? "—" : `${dato.valor.toLocaleString("es-GT")}${unidad}`;
+
+    const pista = document.createElement("div");
+    pista.className = "barra-pista";
+    const relleno = document.createElement("div");
+    relleno.className = "barra-relleno";
+    relleno.style.height = `${(dato.valor / maximo) * 100}%`;
+    pista.append(relleno);
+
+    const etiqueta = document.createElement("span");
+    etiqueta.className = "barra-etiqueta";
+    etiqueta.textContent = dato.etiqueta;
+
+    columna.append(valor, pista, etiqueta);
+    raiz.append(columna);
+  }
+
+  return raiz;
+}

@@ -132,3 +132,123 @@
   font-size: 1.2rem;
   line-height: 1.6;
 }
+
+.cabecera.sin-margen {
+  margin-bottom: 0;
+  align-items: center;
+}
+
+.cabecera.sin-margen h2 {
+  font-size: 1.05rem;
+}
+
+/* barras de calorias por dia */
+.barras {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.barra-columna {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+}
+
+.barra-valor {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.barra-pista {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 56px;
+  height: 150px;
+  border-radius: 8px;
+  background: var(--superficie-2);
+  overflow: hidden;
+}
+
+.barra-relleno {
+  width: 100%;
+  min-height: 3px;
+  border-radius: 8px 8px 0 0;
+  background: var(--tinta);
+  transition: height 0.4s ease;
+}
+
+.barra-columna:not(.vacia):hover .barra-relleno {
+  background: var(--lima);
+}
+
+.barra-columna.vacia .barra-relleno {
+  background: transparent;
+}
+
+.barra-columna.vacia .barra-valor {
+  color: var(--texto-suave);
+}
+
+.barra-etiqueta {
+  color: var(--texto-suave);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+/* listas de planes de alimentacion y detalle por dia */
+.lista-planes li {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--borde);
+}
+
+.lista-planes li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.lista-planes .etiqueta-estado {
+  justify-self: start;
+}
+
+@media (min-width: 720px) {
+  .lista-planes li {
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+.rejilla.detalle-semana {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+
+.dia-detalle h3 {
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+}
+
+.dia-detalle li {
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.dia-detalle .etiqueta-estado {
+  font-size: 0.7rem;
+}
+
+.ayuda {
+  font-size: 0.82rem;
+}
+
+.indicador .unidad {
+  font-family: var(--fuente-texto);
+  font-size: 0.95rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
